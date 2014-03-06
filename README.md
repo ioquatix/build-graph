@@ -2,6 +2,9 @@
 
 Build::Graph is a framework for build systems, with specific functionality for dealing with file based processes.
 
+[![Build Status](https://secure.travis-ci.org/ioquatix/build-graph.png)](http://travis-ci.org/ioquatix/build-graph)
+[![Code Climate](https://codeclimate.com/github/ioquatix/build-graph.png)](https://codeclimate.com/github/ioquatix/build-graph)
+
 ## Installation
 
 Add this line to your application's Gemfile:
