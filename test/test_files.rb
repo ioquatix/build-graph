@@ -60,4 +60,15 @@ class TestFiles < Test::Unit::TestCase
 		# We actually return a subclass which includes the root portion:
 		assert_equal __dir__, test_glob.first.root
 	end
+	
+	def test_renaming
+		program_root = File.join(__dir__, "program")
+		program_glob = Build::Files::Glob.new(program_root, "*.cpp")
+		
+		paths = program_glob.collect do |path|
+			path + ".o"
+		end
+		
+		puts "object paths: #{paths} from program paths: #{program_glob.to_a}"
+	end
 end

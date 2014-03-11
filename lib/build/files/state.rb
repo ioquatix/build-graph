@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 module Build
-	module System
+	module Files
 		# Represents a specific file on disk with a specific mtime.
 		class FileTime
 			include Comparable
@@ -36,7 +36,7 @@ module Build
 				@time <=> other.time
 			end
 		end
-	
+		
 		class State
 			def initialize(files)
 				raise ArgumentError.new("Invalid files list: #{files}") unless Files::List === files

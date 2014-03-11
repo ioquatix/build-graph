@@ -88,8 +88,8 @@ class TestGraph < Test::Unit::TestCase
 	end
 	
 	class Graph < Build::Graph
-		def initialize
-			yield self
+		def initialize(&block)
+			@top = Node.new(self, Build::Files::NONE, Build::Files::NONE, &block)
 			
 			super()
 		end
@@ -101,16 +101,12 @@ class TestGraph < Test::Unit::TestCase
 		end
 		
 		def build_graph!
-			puts "Building graph..."
-			
 			super do |walker, node|
 				Task.new(self, walker, node)
 			end
 		end
 		
 		def update!
-			puts "Updating graph..."
-			
 			pool = Build::System::Pool.new
 			
 			super do |walker, node|
@@ -127,11 +123,9 @@ class TestGraph < Test::Unit::TestCase
 		
 		FileUtils.rm_f output_paths.to_a
 		
-		graph = Graph.new do |graph|
-			graph.top = Node.new(graph, Build::Files::NONE, Build::Files::NONE) do
-				process test_glob, output_paths do
-					run("ls", "-la", *test_glob, :out => output_paths.first)
-				end
+		graph = Graph.new do
+			process test_glob, output_paths do
+				run("ls", "-la", *test_glob, :out => output_paths.first)
 			end
 		end
 		
@@ -144,5 +138,9 @@ class TestGraph < Test::Unit::TestCase
 		assert_equal mtime, File.mtime(output_paths.first)
 		
 		FileUtils.rm_f output_paths.to_a
+		
+		#graph.nodes.each do |key, node|
+		#	puts "#{node.status} #{node.inspect}"
+		#end
 	end
 end

@@ -25,27 +25,15 @@ module Build
 	module Files
 		class List
 			include Enumerable
-		
+			
 			def +(list)
 				Composite.new([self, list])
 			end
-		
+			
 			def intersects? other
 				other.any?{|path| include?(path)}
 			end
-		
-			def rebase(root)
-				raise NotImplementedError
-			end
-		
-			def to_paths
-				relative_paths = self.each do |path|
-					path.relative_path
-				end
 			
-				return Paths.new(@root, relative_paths)
-			end
-		
 			def match(pattern)
 				all? {|path| path.match(pattern)}
 			end
@@ -68,13 +56,48 @@ module Build
 			end
 		end
 	
-		class Directory < List
-			def initialize(root, path = "")
+		# A list which has a single root directory.
+		class DirectoryList < List
+			def initialize(root)
 				@root = root.to_s
+			end
+			
+			attr :root
+			
+			def roots
+				[@root]
+			end
+			
+			def rebase(root)
+				raise NotImplementedError
+			end
+			
+			def to_paths(root=@root)
+				relative_paths = self.each do |path|
+					path.relative_path
+				end
+			
+				return Paths.new(root, relative_paths)
+			end
+			
+			def rename(root=@root)
+				self.collect do |path|
+					basename, _, filename = path.rpartition(File::SEPARATOR)
+					
+					File.join(basename, yield(filename))
+				end
+				
+				Paths.new(root, self.collect)
+			end
+		end
+	
+		class Directory < DirectoryList
+			def initialize(root, path = "")
+				super(root)
+				
 				@path = path
 			end
 		
-			attr :root
 			attr :path
 		
 			def full_path
@@ -85,10 +108,6 @@ module Build
 				Dir.glob(full_path + "**/*").each do |path|
 					yield RelativePath.new(path, @root)
 				end
-			end
-		
-			def roots
-				[full_path]
 			end
 		
 			def eql?(other)
@@ -109,9 +128,10 @@ module Build
 			end
 		end
 	
-		class Glob < List
+		class Glob < DirectoryList
 			def initialize(root, pattern)
-				@root = root.to_s
+				super(root)
+				
 				@pattern = pattern
 			end
 	
@@ -128,11 +148,7 @@ module Build
 					yield RelativePath.new(path, @root)
 				end
 			end
-	
-			def roots
-				[@root]
-			end
-		
+			
 			def eql?(other)
 				other.kind_of?(self.class) and @root.eql?(other.root) and @pattern.eql?(other.pattern)
 			end
@@ -150,9 +166,10 @@ module Build
 			end
 		end
 	
-		class Paths < List
+		class Paths < DirectoryList
 			def initialize(root, paths)
-				@root = root.to_s
+				super(root)
+				
 				@paths = Array(paths)
 			end
 	
@@ -165,10 +182,6 @@ module Build
 				end
 			end
 	
-			def roots
-				[@root]
-			end
-		
 			def eql? other
 				other.kind_of?(self.class) and @paths.eql?(other.paths)
 			end
