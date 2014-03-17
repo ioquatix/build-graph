@@ -80,9 +80,9 @@ module Build
 				return Paths.new(root, relative_paths)
 			end
 			
-			def rename(root=@root)
+			def process(root=@root)
 				self.collect do |path|
-					basename, _, filename = path.rpartition(File::SEPARATOR)
+					basename, _, filename = path.relative_path.rpartition(File::SEPARATOR)
 					
 					File.join(basename, yield(filename))
 				end
@@ -105,7 +105,7 @@ module Build
 			end
 		
 			def each(&block)
-				Dir.glob(full_path + "**/*").each do |path|
+				Dir.glob(full_path + "**/*") do |path|
 					yield RelativePath.new(path, @root)
 				end
 			end
@@ -144,7 +144,7 @@ module Build
 		
 			# Enumerate all paths matching the pattern.
 			def each(&block)
-				Dir.glob(full_pattern).each do |path|
+				Dir.glob(full_pattern) do |path|
 					yield RelativePath.new(path, @root)
 				end
 			end

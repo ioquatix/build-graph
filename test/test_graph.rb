@@ -22,7 +22,9 @@ require 'test/unit'
 
 require 'build/graph'
 require 'build/files'
-require 'build/system/pool'
+
+require 'process/group'
+require 'fileutils'
 
 class TestGraph < Test::Unit::TestCase
 	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
@@ -49,14 +51,14 @@ class TestGraph < Test::Unit::TestCase
 	
 	# The task is the context in which a vertex is updated. Because nodes may initially create other nodes, it is also responsible for looking up and creating new nodes.
 	class Task < Build::Task
-		def initialize(graph, walker, node, pool = nil)
+		def initialize(graph, walker, node, group = nil)
 			super(graph, walker, node)
 			
-			@pool = pool
+			@group = group
 		end
 		
 		def wet?
-			@pool# and @node.dirty?
+			@group# and @node.dirty?
 		end
 		
 		def process(inputs, outputs, &block)
@@ -72,10 +74,10 @@ class TestGraph < Test::Unit::TestCase
 		
 		def run(*arguments)
 			if wet?
-				status = @pool.run(*arguments)
+				status = @group.spawn(*arguments)
 				
 				if status != 0
-					raise CommandFailure.new(arguments, status)
+					raise RuntimeError.new(status)
 				end
 			end
 		end
@@ -107,13 +109,13 @@ class TestGraph < Test::Unit::TestCase
 		end
 		
 		def update!
-			pool = Build::System::Pool.new
+			group = Process::Group.new
 			
 			super do |walker, node|
-				Task.new(self, walker, node, pool)
+				Task.new(self, walker, node, group)
 			end
 			
-			pool.wait
+			group.wait
 		end
 	end
 	

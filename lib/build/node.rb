@@ -1,12 +1,12 @@
 
-require 'build/system/state'
+require 'build/files/state'
 
 module Build
 	class Node
 		def initialize(graph, inputs, outputs)
 			@graph = graph
 			
-			@state = System::IOState.new(inputs, outputs)
+			@state = Files::IOState.new(inputs, outputs)
 			
 			@status = :unknown
 			@fiber = nil

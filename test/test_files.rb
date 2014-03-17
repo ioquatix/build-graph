@@ -65,7 +65,7 @@ class TestFiles < Test::Unit::TestCase
 		program_root = File.join(__dir__, "program")
 		program_glob = Build::Files::Glob.new(program_root, "*.cpp")
 		
-		paths = program_glob.collect do |path|
+		paths = program_glob.process do |path|
 			path + ".o"
 		end
 		

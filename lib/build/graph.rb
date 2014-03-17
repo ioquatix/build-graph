@@ -1,6 +1,5 @@
 
-require 'build/system/monitor'
-require 'build/system/pool'
+require 'build/files/monitor'
 
 require 'build/error'
 require 'build/node'
@@ -8,7 +7,7 @@ require 'build/walker'
 require 'build/edge'
 
 module Build
-	class Graph < System::Monitor
+	class Graph < Files::Monitor
 		def initialize
 			super
 			
