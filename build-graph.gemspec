@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'build/graph/version'
+require 'build/version'
 
 Gem::Specification.new do |spec|
 	spec.name          = "build-graph"
-	spec.version       = Build::Graph::VERSION
+	spec.version       = Build::VERSION
 	spec.authors       = ["Samuel Williams"]
 	spec.email         = ["samuel.williams@oriontransfer.co.nz"]
 	spec.summary       = %q{Build::Graph is a framework for build systems, with specific functionality for dealing with file based processes.}
