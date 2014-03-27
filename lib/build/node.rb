@@ -40,7 +40,7 @@ module Build
 			return if dirty?
 		
 			if @state.intersects?(outputs) || @state.update!
-				# puts "changed: inputs=#{inputs} #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
+				# puts "** Dirty: #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
 			
 				# Could possibly use unknown status here.
 				@status = :dirty
@@ -120,7 +120,8 @@ module Build
 					task.visit
 					
 					# Commit changes:
-					# puts "Committing: #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
+					# puts "** Committing: #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
+					
 					@state.update!
 					@fiber = nil
 					
