@@ -26,6 +26,8 @@ require 'build/files'
 require 'process/group'
 require 'fileutils'
 
+require 'yaml'
+
 class TestGraph < Test::Unit::TestCase
 	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
 	class Node < Build::Node
@@ -58,7 +60,7 @@ class TestGraph < Test::Unit::TestCase
 		end
 		
 		def wet?
-			@group# and @node.dirty?
+			@group and @node.dirty?
 		end
 		
 		def process(inputs, outputs, &block)
@@ -70,6 +72,8 @@ class TestGraph < Test::Unit::TestCase
 		
 			# State saved in update!
 			child_node.update!(@walker)
+			
+			return child_node
 		end
 		
 		def run(*arguments)
@@ -125,15 +129,22 @@ class TestGraph < Test::Unit::TestCase
 		
 		FileUtils.rm_f output_paths.to_a
 		
+		node = nil
+		
 		graph = Graph.new do
-			process test_glob, output_paths do
+			node = process test_glob, output_paths do
+				puts "Running, wet: #{wet?}"
 				run("ls", "-la", *test_glob, :out => output_paths.first)
 			end
 		end
 		
+		assert node
+		
 		graph.update!
 		
 		mtime = File.mtime(output_paths.first)
+		
+		sleep(1)
 		
 		graph.update!
 		

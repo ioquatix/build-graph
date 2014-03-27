@@ -124,6 +124,10 @@ module Build
 			@node.outputs
 		end
 		
+		def wet?
+			@node.dirty?
+		end
+		
 		# Derived task should override this function to provide appropriate behaviour.
 		def visit
 			wait_for_inputs
@@ -145,7 +149,7 @@ module Build
 		def exit
 			if @error || any_child_failed? || any_inputs_failed?
 				@node.fail!
-			elsif @pool
+			elsif wet?
 				@node.clean!
 			end
 			
