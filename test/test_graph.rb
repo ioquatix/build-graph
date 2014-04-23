@@ -135,7 +135,7 @@ class TestGraph < MiniTest::Test
 		
 		graph = Graph.new do
 			node = process test_glob, output_paths do
-				run("ls", "-la", *test_glob, :out => [output_paths.first, "w"])
+				run("ls", "-la", *test_glob, :out => output_paths.first.for_writing)
 			end
 		end
 		

@@ -116,6 +116,18 @@ module Build
 			def ==(other)
 				self.to_s == other.to_s
 			end
+			
+			def for_reading
+				[@full_path, File::RDONLY]
+			end
+			
+			def for_writing
+				[@full_path, File::CREAT|File::TRUNC|File::WRONLY]
+			end
+			
+			def for_appending
+				[@full_path, File::CREAT|File::APPEND|File::WRONLY]
+			end
 		end
 		
 		# A list of paths, where #each yields instances of Path.
