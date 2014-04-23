@@ -66,6 +66,9 @@ class TestGraph < MiniTest::Test
 		end
 		
 		def process(inputs, outputs, &block)
+			inputs = Build::Files::List.coerce(inputs)
+			outputs = Build::Files::List.coerce(outputs)
+			
 			child_node = @graph.nodes.fetch([inputs, outputs]) do |key|
 				@graph.nodes[key] = Node.new(@graph, inputs, outputs, &block)
 			end
@@ -80,6 +83,8 @@ class TestGraph < MiniTest::Test
 		
 		def run(*arguments)
 			if wet?
+				puts "Run: #{arguments.inspect}"
+				
 				status = @group.spawn(*arguments)
 				
 				if status != 0
@@ -161,8 +166,33 @@ class TestGraph < MiniTest::Test
 	
 	def test_program_graph
 		program_root = File.join(__dir__, "program")
-		
 		code_glob = Glob.new(program_root, "*.cpp")
-		output_paths = Paths.new(program_root, ["program"])
+		program_path = Path.join(program_root, "test")
+		
+		FileUtils.touch(code_glob.first)
+		
+		graph = Graph.new do
+			process code_glob, program_path do
+				object_files = inputs.with(extension: ".o") do |input_path, output_path|
+					process input_path, output_path do
+						run("clang++", "-o", output_path, "-c", input_path, "-std=c++11")
+					end
+				end
+				
+				process object_files, program_path do
+					run("clang++", "-o", program_path, *object_files.to_a)
+				end
+			end
+			
+			process program_path, NONE do
+				run(program_path)
+			end
+		end
+		
+		graph.update!
+		
+		assert File.exist?(program_path)
+		
+		assert_operator File.mtime(code_glob.first), :<=, File.mtime(program_path)
 	end
 end

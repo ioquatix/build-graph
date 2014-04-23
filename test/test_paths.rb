@@ -100,4 +100,12 @@ class TestPaths < MiniTest::Test
 		
 		assert_equal glob.roots, mapped_paths.roots
 	end
+	
+	def test_hashing
+		cache = {}
+		
+		cache[Paths.new(@path)] = true
+		
+		assert cache[Paths.new(@path)]
+	end
 end

@@ -151,6 +151,8 @@ module Build
 			def with(**args)
 				return to_enum(:with, **args) unless block_given?
 				
+				paths = []
+				
 				each do |path|
 					updated_path = path.with(args)
 					
@@ -158,6 +160,8 @@ module Build
 					
 					paths << updated_path
 				end
+				
+				return Paths.new(paths)
 			end
 			
 			def rebase(root)
@@ -171,13 +175,23 @@ module Build
 			def map
 				Paths.new(super)
 			end
+			
+			def self.coerce(arg)
+				if arg.kind_of? self
+					arg
+				else
+					Paths.new(arg)
+				end
+			end
 		end
 		
 		class Paths < List
 			def initialize(list, roots = nil)
-				@list = list.freeze
+				@list = Array(list).freeze
 				@roots = roots
 			end
+			
+			attr :list
 			
 			# The list of roots for a given list of immutable files is also immutable, so we cache it for performance:
 			def roots
@@ -192,6 +206,14 @@ module Build
 				return to_enum(:each) unless block_given?
 				
 				@list.each{|path| yield path}
+			end
+			
+			def eql?(other)
+				other.kind_of?(self.class) and @list.eql?(other.list)
+			end
+		
+			def hash
+				@list.hash
 			end
 			
 			def to_paths
