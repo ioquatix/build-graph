@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'test/unit'
+require 'minitest/autorun'
 
 require 'build/graph'
 require 'build/files'
@@ -28,10 +28,12 @@ require 'fileutils'
 
 require 'yaml'
 
-class TestGraph < Test::Unit::TestCase
+class TestGraph < MiniTest::Test
+	include Build::Files
+	
 	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
 	class Node < Build::Node
-		def initialize(graph, inputs, outputs, &update)
+		def initialize(graph, inputs = Build::Files::NONE, outputs = Build::Files::NONE, &update)
 			@update = update
 			
 			super(graph, inputs, outputs)
@@ -67,9 +69,9 @@ class TestGraph < Test::Unit::TestCase
 			child_node = @graph.nodes.fetch([inputs, outputs]) do |key|
 				@graph.nodes[key] = Node.new(@graph, inputs, outputs, &block)
 			end
-		
+			
 			@children << child_node
-		
+			
 			# State saved in update!
 			child_node.update!(@walker)
 			
@@ -95,7 +97,7 @@ class TestGraph < Test::Unit::TestCase
 	
 	class Graph < Build::Graph
 		def initialize(&block)
-			@top = Node.new(self, Build::Files::NONE, Build::Files::NONE, &block)
+			@top = Node.new(self, &block)
 			
 			super()
 		end
@@ -124,8 +126,8 @@ class TestGraph < Test::Unit::TestCase
 	end
 	
 	def test_minimal_graph
-		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
-		output_paths = Build::Files::Paths.new(__dir__, ["listing.txt"])
+		test_glob = Glob.new(__dir__, "*.rb")
+		output_paths = Paths.directory(__dir__, ["listing.txt"])
 		
 		FileUtils.rm_f output_paths.to_a
 		
@@ -133,8 +135,7 @@ class TestGraph < Test::Unit::TestCase
 		
 		graph = Graph.new do
 			node = process test_glob, output_paths do
-				puts "Running, wet: #{wet?}"
-				run("ls", "-la", *test_glob, :out => output_paths.first)
+				run("ls", "-la", *test_glob, :out => [output_paths.first, "w"])
 			end
 		end
 		
@@ -148,6 +149,7 @@ class TestGraph < Test::Unit::TestCase
 		
 		graph.update!
 		
+		# The output file shouldn't have been changed because already exists and the input files haven't changed either.
 		assert_equal mtime, File.mtime(output_paths.first)
 		
 		FileUtils.rm_f output_paths.to_a
@@ -155,5 +157,12 @@ class TestGraph < Test::Unit::TestCase
 		#graph.nodes.each do |key, node|
 		#	puts "#{node.status} #{node.inspect}"
 		#end
+	end
+	
+	def test_program_graph
+		program_root = File.join(__dir__, "program")
+		
+		code_glob = Glob.new(program_root, "*.cpp")
+		output_paths = Paths.new(program_root, ["program"])
 	end
 end

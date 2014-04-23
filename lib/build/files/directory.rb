@@ -18,9 +18,51 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'files/paths'
-require_relative 'files/glob'
-require_relative 'files/directory'
+require_relative 'paths'
 
-require_relative 'files/state'
-require_relative 'files/monitor'
+module Build
+	module Files
+		class Directory < List
+			def initialize(root)
+				@root = root
+				@path = path
+			end
+			
+			attr :root
+			attr :path
+			
+			def roots
+				[@root]
+			end
+			
+			def full_path
+				Path.join(@root, @path)
+			end
+		
+			def each
+				return to_enum(:each) unless block_given?
+				
+				Dir.glob(full_path + "**/*") do |path|
+					yield Path.new(path, @root)
+				end
+			end
+		
+			def eql?(other)
+				other.kind_of?(self.class) and @root.eql?(other.root) and @path.eql?(other.path)
+			end
+		
+			def hash
+				[@root, @path].hash
+			end
+		
+			def include?(path)
+				# Would be true if path is a descendant of full_path.
+				path.start_with?(full_path)
+			end
+		
+			def rebase(root)
+				self.class.new(root, @path)
+			end
+		end
+	end
+end

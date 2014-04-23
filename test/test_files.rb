@@ -18,19 +18,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'test/unit'
+require 'minitest/autorun'
 
 require 'build/files'
 
-class TestFiles < Test::Unit::TestCase
+class TestFiles < MiniTest::Test
+	include Build::Files
+	
 	def test_inclusion
 		# Glob all test files:
-		glob = Build::Files::Glob.new(__dir__, "*.rb")
+		glob = Glob.new(__dir__, "*.rb")
 		
 		assert glob.count > 0
 		
 		# Should include this file:
-		assert glob.include?(__FILE__)
+		assert_includes glob, __FILE__
 		
 		# Glob should intersect self:
 		assert glob.intersects?(glob)
@@ -39,8 +41,8 @@ class TestFiles < Test::Unit::TestCase
 	def test_composites
 		lib = File.join(__dir__, "../lib")
 		
-		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
-		lib_glob = Build::Files::Glob.new(lib, "*.rb")
+		test_glob = Glob.new(__dir__, "*.rb")
+		lib_glob = Glob.new(lib, "*.rb")
 		
 		both = test_glob + lib_glob
 		
@@ -52,23 +54,23 @@ class TestFiles < Test::Unit::TestCase
 	end
 	
 	def test_roots
-		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		test_glob = Glob.new(__dir__, "*.rb")
 		
-		# Despite returning a String:
-		assert test_glob.first.kind_of? String
+		assert_kind_of Path, test_glob.first
 		
-		# We actually return a subclass which includes the root portion:
 		assert_equal __dir__, test_glob.first.root
 	end
 	
 	def test_renaming
 		program_root = File.join(__dir__, "program")
-		program_glob = Build::Files::Glob.new(program_root, "*.cpp")
+		program_glob = Glob.new(program_root, "*.cpp")
 		
-		paths = program_glob.process do |path|
-			path + ".o"
-		end
+		paths = program_glob.map {|path| path + ".o"}
 		
-		puts "object paths: #{paths} from program paths: #{program_glob.to_a}"
+		assert_equal(paths.first, program_glob.first + ".o")
+	end
+	
+	def test_none
+		assert_equal 0, NONE.count
 	end
 end
