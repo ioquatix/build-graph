@@ -47,4 +47,15 @@ class TestFilesState < MiniTest::Test
 		assert state.update!, "Files missing"
 		refute_empty state.missing
 	end
+	
+	def test_duplicates
+		state = State.new(@files + @files)
+		
+		refute state.update!, "Files not changed"
+		
+		assert_equal [], state.changed
+		assert_equal [], state.added
+		assert_equal [], state.removed
+		assert_equal [], state.missing
+	end
 end

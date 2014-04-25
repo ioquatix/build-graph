@@ -69,6 +69,9 @@ module Build
 				file_times = []
 				
 				@files.each do |path|
+					# When processing the same path twice (perhaps by accident), we should skip it otherwise it might cause issues when being deleted from last_times multuple times.
+					next if @times.include? path
+					
 					if File.exist?(path)
 						modified_time = File.mtime(path)
 					
