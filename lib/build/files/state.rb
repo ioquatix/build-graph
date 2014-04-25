@@ -97,14 +97,10 @@ module Build
 			
 				@removed = last_times.keys
 				
-				#@removed.each do |path|
-				#	puts "Removed: #{path}"
-				#end
-				
 				@oldest_time = file_times.min
 				@newest_time = file_times.max
 				
-				return @added.size > 0 || @changed.size > 0 || @removed.size > 0
+				return @added.size > 0 || @changed.size > 0 || @removed.size > 0 || @missing.size > 0
 			end
 		
 			attr :oldest_time
