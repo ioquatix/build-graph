@@ -20,7 +20,7 @@
 
 require 'minitest/autorun'
 
-require 'build/depfile'
+require 'build/files/depfile'
 
 class TestDepfile < MiniTest::Test
 	DEPFILE_TEXT = <<-EOF
@@ -34,15 +34,15 @@ class TestDepfile < MiniTest::Test
 	EOF
 	
 	def test_parser
-		depfile = Build::Depfile.parse(DEPFILE_TEXT)
+		depfile = Build::Files::Depfile.parse(DEPFILE_TEXT)
 		
 		assert_equal 3, depfile.rules.count
-		assert_includes depfile.rules, "target1"
-		assert_includes depfile.rules, "target2"
-		assert_includes depfile.rules, "target3"
+		assert_includes depfile, "target1"
+		assert_includes depfile, "target2"
+		assert_includes depfile, "target3"
 		
-		assert_equal %w{source1 source2 source3}, depfile.rules['target1']
-		assert_equal %w{}, depfile.rules['target2']
-		assert_equal %w{source4}, depfile.rules['target3']
+		assert_equal %w{source1 source2 source3}, depfile["target1"]
+		assert_equal %w{}, depfile["target2"]
+		assert_equal %w{source4}, depfile["target3"]
 	end
 end

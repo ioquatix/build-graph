@@ -133,7 +133,11 @@ module Build
 		end
 		
 		def self.Path(*args)
-			Path.new(*args)
+			if Path === args[0]
+				args[0]
+			else
+				Path.new(*args)
+			end
 		end
 		
 		# A list of paths, where #each yields instances of Path.
