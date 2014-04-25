@@ -86,7 +86,7 @@ module Build
 		
 		# If we are in the initial state, we need to check if the outputs are fresh.
 		def update_status!
-			# puts "Update status: #{@inputs.inspect} -> #{@outputs.inspect} (status=#{@status} @fiber=#{@fiber.inspect}) @status=#{@status} @state.fresh?=#{@state.fresh?}"
+			#puts "Update status: #{@inputs.inspect} -> #{@outputs.inspect} (status=#{@status} @fiber=#{@fiber.inspect}) @status=#{@status} @state.fresh?=#{@state.fresh?}"
 			
 			if @status == :unknown
 				# This could be improved - only stale files should be reported, instead we report all.
@@ -108,7 +108,7 @@ module Build
 		
 		# Perform some actions to update this node, returns when completed, and the node is no longer dirty.
 		def update!(walker)
-			# puts "Walking #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect} (dirty=#{dirty?} @fiber=#{@fiber.inspect})"
+			#puts "Walking #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect} (dirty=#{dirty?} @fiber=#{@fiber.inspect})"
 			
 			# If a fiber already exists, this node is in the process of updating.
 			if requires_update? and @fiber == nil

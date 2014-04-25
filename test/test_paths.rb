@@ -94,7 +94,7 @@ class TestPaths < MiniTest::Test
 	def test_glob
 		glob = Glob.new(File.join(__dir__, 'program'), '*.cpp')
 		
-		assert_equal 1, glob.count
+		assert_equal 2, glob.count
 		
 		mapped_paths = glob.map {|path| path + ".o"}
 		

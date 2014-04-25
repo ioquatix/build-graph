@@ -18,56 +18,71 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'paths'
+require 'strscan'
+
+require_relative 'files/paths'
 
 module Build
-	module Files
-		class Glob < List
-			def initialize(root, pattern)
-				@root = root
-				@pattern = pattern
-			end
-			
-			attr :root
-			attr :pattern
-			
-			def roots
-				[@root]
-			end
-			
-			def full_pattern
-				Path.join(@root, @pattern)
-			end
+	class Depfile
+		def initialize(rules)
+			@rules = rules
+		end
 		
-			# Enumerate all paths matching the pattern.
-			def each(&block)
-				return to_enum(:each) unless block_given?
-				
-				Dir.glob(full_pattern) do |path|
-					yield Path.new(path, @root)
+		attr :rules
+		
+		def self.load_file(path)
+			input = File.read(path)
+			
+			self.parse(input)
+		end
+		
+		module Parser
+			SOURCE_PATH = /(\\\s|[^\s])+/
+			SOURCE_SEPARATOR = /((:?\\\n|\s|\n)+)/
+			
+			def self.parse_rule(scanner)
+				if scanner.scan(/(.*):/)
+					rule = [:rule]
+					
+					target = scanner[1].strip
+					rule << target
+					
+					# Parse dependencies:
+					dependencies = []
+					until scanner.scan(/\s*\n/) or scanner.eos?
+						scanner.scan(/(\s|\\\n)*/)
+						
+						scanner.scan(SOURCE_PATH)
+						dependencies << scanner[0].gsub(/\\ /, ' ')
+					end
+					rule << dependencies
+					
+					return rule
 				end
 			end
 			
-			def eql?(other)
-				other.kind_of?(self.class) and @root.eql?(other.root) and @pattern.eql?(other.pattern)
-			end
-		
-			def hash
-				[@root, @pattern].hash
-			end
-		
-			def include?(path)
-				File.fnmatch(full_pattern, path)
-			end
-		
-			def rebase(root)
-				self.class.new(root, @pattern)
+			def self.parse_statement(scanner)
+				parse_rule(scanner)
 			end
 			
-			def inspect
-				"<Glob #{full_pattern.inspect}>"
+			def self.parse(scanner)
+				while definition = parse_statement(scanner)
+					yield definition
+				end
+			end
+		end
+		
+		def self.parse(string)
+			scanner = StringScanner.new(string)
+			
+			dependencies = {}
+			Parser::parse(scanner) do |statement|
+				if statement[0] == :rule
+					dependencies[statement[1]] = statement[2]
+				end
 			end
 			
+			self.new(dependencies)
 		end
 	end
 end

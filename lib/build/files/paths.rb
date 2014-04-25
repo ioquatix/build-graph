@@ -34,15 +34,17 @@ module Build
 			end
 			
 			# Both paths must be full absolute paths, and path must have root as an prefix.
-			def initialize(full_path, root)
-				raise ArgumentError.new("#{root} is not a prefix of #{full_path}") unless full_path.start_with?(root)
-				
-				@root = root
-				
+			def initialize(full_path, root = nil)
 				# This is the object identity:
 				@full_path = full_path
 				
-				@relative_path = nil
+				if root
+					@root = root
+					@relative_path = nil
+				else
+					# Effectively dirname and basename:
+					@root, @relative_path = File.split(full_path)
+				end
 			end
 			
 			attr :root
@@ -110,7 +112,7 @@ module Build
 			end
 			
 			def eql?(other)
-				self.class.eql?(other.class) and self.to_s.eql?(other.to_s)
+				@full_path.eql?(other.to_s)
 			end
 			
 			def ==(other)
@@ -128,6 +130,10 @@ module Build
 			def for_appending
 				[@full_path, File::CREAT|File::APPEND|File::WRONLY]
 			end
+		end
+		
+		def self.Path(*args)
+			Path.new(*args)
 		end
 		
 		# A list of paths, where #each yields instances of Path.
@@ -220,6 +226,10 @@ module Build
 				self
 			end
 			
+			def inspect
+				"<Paths #{@list.inspect}>"
+			end
+			
 			def self.directory(root, relative_paths)
 				paths = relative_paths.collect do |path|
 					Path.join(root, path)
@@ -231,7 +241,7 @@ module Build
 		
 		class Composite < List
 			def initialize(files, roots = nil)
-				@files = Set.new
+				@files = []
 				
 				files.each do |list|
 					if list.kind_of? Composite
@@ -254,7 +264,7 @@ module Build
 				return to_enum(:each) unless block_given?
 				
 				@files.each do |files|
-					files.each{yield}
+					files.each{|path| yield path}
 				end
 			end
 			
@@ -288,6 +298,10 @@ module Build
 		
 			def to_paths
 				self.class.new(@files.collect(&:to_paths), roots: @roots)
+			end
+			
+			def inspect
+				"<Composite #{@files.inspect}>"
 			end
 		end
 	

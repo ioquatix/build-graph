@@ -22,6 +22,7 @@ require 'minitest/autorun'
 
 require 'build/graph'
 require 'build/files'
+require 'build/depfile'
 
 require 'process/group'
 require 'fileutils'
@@ -83,7 +84,7 @@ class TestGraph < MiniTest::Test
 		
 		def run(*arguments)
 			if wet?
-				puts "Run: #{arguments.inspect}"
+				puts arguments.join(" ")
 				
 				status = @group.spawn(*arguments)
 				
@@ -167,20 +168,32 @@ class TestGraph < MiniTest::Test
 	def test_program_graph
 		program_root = File.join(__dir__, "program")
 		code_glob = Glob.new(program_root, "*.cpp")
-		program_path = Path.join(program_root, "test")
+		program_path = Path.join(program_root, "dictionary-sort")
 		
-		FileUtils.touch(code_glob.first)
+		# FileUtils.touch(code_glob.first)
 		
 		graph = Graph.new do
 			process code_glob, program_path do
 				object_files = inputs.with(extension: ".o") do |input_path, output_path|
-					process input_path, output_path do
-						run("clang++", "-o", output_path, "-c", input_path, "-std=c++11")
+					depfile_path = input_path + ".d"
+					
+					dependencies = Paths.new(input_path)
+					
+					if File.exist? depfile_path
+						depfile = Build::Depfile.load_file(depfile_path)
+						
+						dependencies = Paths.new(depfile.rules[output_path].collect{|source| Build::Files::Path(source)})
+					end
+					
+					process dependencies, output_path do
+						puts "Dependencies for #{output_path.relative_path}: #{dependencies.to_a.inspect}" if wet?
+						
+						run("clang++", "-MMD", "-O3", "-o", output_path, "-c", input_path, "-std=c++11")
 					end
 				end
 				
 				process object_files, program_path do
-					run("clang++", "-o", program_path, *object_files.to_a)
+					run("clang++", "-MD", "-o", program_path, *object_files.to_a, "-lm")
 				end
 			end
 			
@@ -191,7 +204,7 @@ class TestGraph < MiniTest::Test
 		
 		graph.update!
 		
-		assert File.exist?(program_path)
+		assert File.exist?(program_path), "Program binary exists."
 		
 		assert_operator File.mtime(code_glob.first), :<=, File.mtime(program_path)
 	end

@@ -67,7 +67,7 @@ module Build
 				@missing = []
 			
 				file_times = []
-			
+				
 				@files.each do |path|
 					if File.exist?(path)
 						modified_time = File.mtime(path)

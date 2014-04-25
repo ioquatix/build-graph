@@ -18,56 +18,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'paths'
+require 'minitest/autorun'
 
-module Build
-	module Files
-		class Glob < List
-			def initialize(root, pattern)
-				@root = root
-				@pattern = pattern
-			end
-			
-			attr :root
-			attr :pattern
-			
-			def roots
-				[@root]
-			end
-			
-			def full_pattern
-				Path.join(@root, @pattern)
-			end
+require 'build/depfile'
+
+class TestDepfile < MiniTest::Test
+	DEPFILE_TEXT = <<-EOF
+		target1: source1 source2 \
+			source3
 		
-			# Enumerate all paths matching the pattern.
-			def each(&block)
-				return to_enum(:each) unless block_given?
-				
-				Dir.glob(full_pattern) do |path|
-					yield Path.new(path, @root)
-				end
-			end
-			
-			def eql?(other)
-				other.kind_of?(self.class) and @root.eql?(other.root) and @pattern.eql?(other.pattern)
-			end
+		target2:
 		
-			def hash
-				[@root, @pattern].hash
-			end
+		target3: \
+			source4
+	EOF
+	
+	def test_parser
+		depfile = Build::Depfile.parse(DEPFILE_TEXT)
 		
-			def include?(path)
-				File.fnmatch(full_pattern, path)
-			end
+		assert_equal 3, depfile.rules.count
+		assert_includes depfile.rules, "target1"
+		assert_includes depfile.rules, "target2"
+		assert_includes depfile.rules, "target3"
 		
-			def rebase(root)
-				self.class.new(root, @pattern)
-			end
-			
-			def inspect
-				"<Glob #{full_pattern.inspect}>"
-			end
-			
-		end
+		assert_equal %w{source1 source2 source3}, depfile.rules['target1']
+		assert_equal %w{}, depfile.rules['target2']
+		assert_equal %w{source4}, depfile.rules['target3']
 	end
 end
