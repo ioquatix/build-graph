@@ -193,7 +193,7 @@ class TestGraph < MiniTest::Test
 				end
 				
 				process object_files, program_path do
-					run("clang++", "-MD", "-o", program_path, *object_files.to_a, "-lm")
+					run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm")
 				end
 			end
 			
