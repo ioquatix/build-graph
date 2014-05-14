@@ -22,7 +22,7 @@ require 'minitest/autorun'
 
 require 'build/graph'
 require 'build/files'
-require 'build/files/depfile'
+require 'build/depfile'
 
 require 'process/group'
 require 'fileutils'
@@ -55,7 +55,7 @@ class TestGraph < MiniTest::Test
 	end
 	
 	# The task is the context in which a vertex is updated. Because nodes may initially create other nodes, it is also responsible for looking up and creating new nodes.
-	class Task < Build::Task
+	class Task < Build::Graph::Task
 		def initialize(graph, walker, node, group = nil)
 			super(graph, walker, node)
 			
@@ -101,7 +101,7 @@ class TestGraph < MiniTest::Test
 		end
 	end
 	
-	class Graph < Build::Graph
+	class Controller < Build::Graph::Controller
 		def initialize(&block)
 			@top = Node.new(self, &block)
 			
@@ -139,7 +139,7 @@ class TestGraph < MiniTest::Test
 		
 		node = nil
 		
-		graph = Graph.new do
+		controller = Controller.new do
 			node = process test_glob, output_paths do
 				run("ls", "-la", *test_glob, :out => output_paths.first.for_writing)
 			end
@@ -147,13 +147,13 @@ class TestGraph < MiniTest::Test
 		
 		assert node
 		
-		graph.update!
+		controller.update!
 		
 		mtime = File.mtime(output_paths.first)
 		
 		sleep(1)
 		
-		graph.update!
+		controller.update!
 		
 		# The output file shouldn't have been changed because already exists and the input files haven't changed either.
 		assert_equal mtime, File.mtime(output_paths.first)
@@ -172,7 +172,7 @@ class TestGraph < MiniTest::Test
 		
 		# FileUtils.touch(code_glob.first)
 		
-		graph = Graph.new do
+		controller = Controller.new do
 			process code_glob, program_path do
 				object_files = inputs.with(extension: ".o") do |input_path, output_path|
 					depfile_path = input_path + ".d"
@@ -180,7 +180,7 @@ class TestGraph < MiniTest::Test
 					dependencies = Paths.new(input_path)
 					
 					if File.exist? depfile_path
-						depfile = Build::Files::Depfile.load_file(depfile_path)
+						depfile = Build::Depfile.load_file(depfile_path)
 						
 						dependencies = Paths.new(depfile.rules[output_path].collect{|source| Build::Files::Path(source)})
 					end
@@ -202,7 +202,7 @@ class TestGraph < MiniTest::Test
 			end
 		end
 		
-		graph.update!
+		controller.update!
 		
 		assert File.exist?(program_path), "Program binary exists."
 		
