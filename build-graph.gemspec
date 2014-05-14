@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
 	spec.require_paths = ["lib"]
 
 	spec.add_dependency "process-group", "~> 0.1.0"
+	spec.add_dependency "build-files", "~> 0.1.0"
 
 	spec.add_dependency "system"
 	spec.add_dependency "rainbow"
