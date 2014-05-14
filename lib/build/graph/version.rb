@@ -19,5 +19,7 @@
 # THE SOFTWARE.
 
 module Build
-	VERSION = "0.2.0"
+	module Graph
+		VERSION = "0.3.0"
+	end
 end

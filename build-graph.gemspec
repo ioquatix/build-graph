@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'build/version'
+require 'build/graph/version'
 
 Gem::Specification.new do |spec|
 	spec.name          = "build-graph"
-	spec.version       = Build::VERSION
+	spec.version       = Build::Graph::VERSION
 	spec.authors       = ["Samuel Williams"]
 	spec.email         = ["samuel.williams@oriontransfer.co.nz"]
 	spec.summary       = %q{Build::Graph is a framework for build systems, with specific functionality for dealing with file based processes.}
@@ -27,5 +27,6 @@ Gem::Specification.new do |spec|
 	spec.add_dependency "rainbow"
 
 	spec.add_development_dependency "bundler", "~> 1.3"
+	spec.add_development_dependency "minitest", "~> 5.3.2"
 	spec.add_development_dependency "rake"
 end
