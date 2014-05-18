@@ -22,7 +22,7 @@ require 'minitest/autorun'
 
 require 'build/graph'
 require 'build/files'
-require 'build/depfile'
+require 'build/makefile'
 
 require 'process/group'
 require 'fileutils'
@@ -180,7 +180,7 @@ class TestGraph < MiniTest::Test
 					dependencies = Paths.new(input_path)
 					
 					if File.exist? depfile_path
-						depfile = Build::Depfile.load_file(depfile_path)
+						depfile = Build::Makefile.load_file(depfile_path)
 						
 						dependencies = Paths.new(depfile.rules[output_path].collect{|source| Build::Files::Path(source)})
 					end
