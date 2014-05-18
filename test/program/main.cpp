@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <algorithm>
 
 #include "Benchmark.h"
 #include "DictionarySort.h"
