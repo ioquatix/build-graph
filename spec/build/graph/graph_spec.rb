@@ -18,23 +18,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'minitest/autorun'
-
 require 'build/graph'
 require 'build/files'
 require 'build/makefile'
 
 require 'process/group'
 require 'fileutils'
+require 'rainbow'
 
-require 'yaml'
-
-class TestGraph < MiniTest::Test
-	include Build::Files
-	
+module Build::Graph::GraphSpec
 	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
 	class Node < Build::Node
-		def initialize(graph, inputs = Build::Files::NONE, outputs = Build::Files::NONE, &update)
+		include Build::Files
+		
+		def initialize(graph, inputs = Paths::NONE, outputs = Paths::NONE, &update)
 			@update = update
 			
 			super(graph, inputs, outputs)
@@ -56,6 +53,8 @@ class TestGraph < MiniTest::Test
 	
 	# The task is the context in which a vertex is updated. Because nodes may initially create other nodes, it is also responsible for looking up and creating new nodes.
 	class Task < Build::Graph::Task
+		include Build::Files
+		
 		def initialize(graph, walker, node, group = nil)
 			super(graph, walker, node)
 			
@@ -84,6 +83,7 @@ class TestGraph < MiniTest::Test
 		
 		def run(*arguments)
 			if wet?
+				puts Rainbow("Wet because : #{@node.state.inspect}").blue
 				puts arguments.join(" ")
 				
 				status = @group.spawn(*arguments)
@@ -131,81 +131,81 @@ class TestGraph < MiniTest::Test
 		end
 	end
 	
-	def test_minimal_graph
-		test_glob = Glob.new(__dir__, "*.rb")
-		output_paths = Paths.directory(__dir__, ["listing.txt"])
-		
-		FileUtils.rm_f output_paths.to_a
-		
-		node = nil
-		
-		controller = Controller.new do
-			node = process test_glob, output_paths do
-				run("ls", "-la", *test_glob, :out => output_paths.first.for_writing)
-			end
-		end
-		
-		assert node
-		
-		controller.update!
-		
-		mtime = File.mtime(output_paths.first)
-		
-		sleep(1)
-		
-		controller.update!
-		
-		# The output file shouldn't have been changed because already exists and the input files haven't changed either.
-		assert_equal mtime, File.mtime(output_paths.first)
-		
-		FileUtils.rm_f output_paths.to_a
-		
-		#graph.nodes.each do |key, node|
-		#	puts "#{node.status} #{node.inspect}"
-		#end
-	end
+	include Build::Files
 	
-	def test_program_graph
-		program_root = File.join(__dir__, "program")
-		code_glob = Glob.new(program_root, "*.cpp")
-		program_path = Path.join(program_root, "dictionary-sort")
-		
-		# FileUtils.touch(code_glob.first)
-		
-		controller = Controller.new do
-			process code_glob, program_path do
-				object_files = inputs.with(extension: ".o") do |input_path, output_path|
-					depfile_path = input_path + ".d"
-					
-					dependencies = Paths.new(input_path)
-					
-					if File.exist? depfile_path
-						depfile = Build::Makefile.load_file(depfile_path)
-						
-						dependencies = Paths.new(depfile.rules[output_path].collect{|source| Build::Files::Path(source)})
-					end
-					
-					process dependencies, output_path do
-						puts "Dependencies for #{output_path.relative_path}: #{dependencies.to_a.inspect}" if wet?
-						
-						run("clang++", "-MMD", "-O3", "-o", output_path, "-c", input_path, "-std=c++11")
-					end
-				end
-				
-				process object_files, program_path do
-					run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm", "-pthread")
+	describe Build::Graph do
+		it "shouldn't update mtime" do
+			test_glob = Glob.new(__dir__, "*.rb")
+			output_paths = Paths.directory(__dir__, ["listing.txt"])
+			
+			FileUtils.rm_f output_paths.to_a
+			
+			node = nil
+			
+			controller = Controller.new do
+				node = process test_glob, output_paths do
+					run("ls", "-la", *test_glob, :out => output_paths.first.for_writing)
 				end
 			end
 			
-			process program_path, NONE do
-				run(program_path)
-			end
+			expect(node).to_not be nil
+			
+			controller.update!
+			
+			mtime = File.mtime(output_paths.first)
+			
+			# Ensure the mtime will change even if the granularity of the filesystem is 1 second:
+			sleep(1)
+			
+			controller.update!
+			
+			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
+			expect(File.mtime(output_paths.first)).to be == mtime
+			
+			FileUtils.rm_f output_paths.to_a
 		end
 		
-		controller.update!
+		it "should compile program and respond to changes in source code" do
+			program_root = File.join(__dir__, "program")
+			code_glob = Glob.new(program_root, "*.cpp")
+			program_path = Path.join(program_root, "dictionary-sort")
 		
-		assert File.exist?(program_path), "Program binary exists."
+			# FileUtils.touch(code_glob.first)
 		
-		assert_operator File.mtime(code_glob.first), :<=, File.mtime(program_path)
+			controller = Controller.new do
+				process code_glob, program_path do
+					object_files = inputs.with(extension: ".o") do |input_path, output_path|
+						depfile_path = input_path + ".d"
+					
+						dependencies = Paths.new(input_path)
+					
+						if File.exist? depfile_path
+							depfile = Build::Makefile.load_file(depfile_path)
+							
+							dependencies = depfile[output_path] || dependencies
+						end
+					
+						process dependencies, output_path do
+							# puts "Dependencies for #{output_path.relative_path}: #{dependencies.to_a.inspect}" if wet?
+						
+							run("clang++", "-MMD", "-O3", "-o", output_path.relative_path, "-c", input_path.relative_path, "-std=c++11", chdir: input_path.root)
+						end
+					end
+				
+					process object_files, program_path do
+						run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm", "-pthread")
+					end
+				end
+			
+				process program_path, Paths::NONE do
+					run("./" + program_path.relative_path, chdir: program_path.root)
+				end
+			end
+			
+			controller.update!
+			
+			expect(File.exist?(program_path)).to be true
+			expect(File.mtime(code_glob.first)).to be <= File.mtime(program_path)
+		end
 	end
 end
