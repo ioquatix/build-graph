@@ -26,8 +26,8 @@ module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
-			def initialize(graph, &task)
-				@graph = graph
+			def initialize(controller, &task)
+				@controller = controller
 				@task = task
 			
 				@count = 0
@@ -36,7 +36,7 @@ module Build
 				@dirty = Set.new
 			
 				# Generate a list of dirty outputs, possibly a subset, if the build graph might generate additional nodes:
-				@graph.nodes.each do |key, node|
+				@controller.nodes.each do |key, node|
 					# For a given child, a list of any parents waiting on it.
 					if node.dirty?
 						@dirty << node
@@ -55,7 +55,7 @@ module Build
 				@failed = Set.new
 			end
 		
-			attr :graph
+			attr :controller
 			attr :output
 		
 			attr_accessor :count
@@ -123,8 +123,8 @@ module Build
 	
 		# A task is a specific process and scope applied to a graph node.
 		class Task
-			def initialize(graph, walker, node)
-				@graph = graph
+			def initialize(controller, walker, node)
+				@controller = controller
 				@node = node
 				@walker = walker
 			

@@ -22,8 +22,8 @@ require 'build/files/state'
 
 module Build
 	class Node
-		def initialize(graph, inputs, outputs)
-			@graph = graph
+		def initialize(controller, inputs, outputs)
+			@controller = controller
 			
 			@state = Files::IOState.new(inputs, outputs)
 			
@@ -34,7 +34,7 @@ module Build
 			@inputs = inputs
 			@outputs = outputs
 			
-			@graph.add(self)
+			@controller.add(self)
 		end
 		
 		def eql?(other)
@@ -50,7 +50,7 @@ module Build
 		end
 		
 		def remove!
-			@graph.delete(self)
+			@controller.delete(self)
 		end
 		
 		# It is possible this function is called unnecessarily. The state check confirms whether a change occurred or not.
@@ -65,7 +65,7 @@ module Build
 				@status = :dirty
 			
 				# If this node changes, we force all other nodes which depend on this node to be dirty.
-				@graph.update(directories, @outputs)
+				@controller.update(directories, @outputs)
 			end
 		end
 		

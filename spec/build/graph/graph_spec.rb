@@ -31,10 +31,10 @@ module Build::Graph::GraphSpec
 	class Node < Build::Node
 		include Build::Files
 		
-		def initialize(graph, inputs = Paths::NONE, outputs = Paths::NONE, &update)
+		def initialize(controller, inputs = Paths::NONE, outputs = Paths::NONE, &update)
 			@update = update
 			
-			super(graph, inputs, outputs)
+			super(controller, inputs, outputs)
 		end
 		
 		def apply!(scope)
@@ -55,8 +55,8 @@ module Build::Graph::GraphSpec
 	class Task < Build::Graph::Task
 		include Build::Files
 		
-		def initialize(graph, walker, node, group = nil)
-			super(graph, walker, node)
+		def initialize(controller, walker, node, group = nil)
+			super(controller, walker, node)
 			
 			@group = group
 		end
@@ -69,8 +69,8 @@ module Build::Graph::GraphSpec
 			inputs = Build::Files::List.coerce(inputs)
 			outputs = Build::Files::List.coerce(outputs)
 			
-			child_node = @graph.nodes.fetch([inputs, outputs]) do |key|
-				@graph.nodes[key] = Node.new(@graph, inputs, outputs, &block)
+			child_node = @controller.nodes.fetch([inputs, outputs]) do |key|
+				@controller.nodes[key] = Node.new(@controller, inputs, outputs, &block)
 			end
 			
 			@children << child_node
@@ -83,9 +83,6 @@ module Build::Graph::GraphSpec
 		
 		def run(*arguments)
 			if wet?
-				puts Rainbow("Wet because : #{@node.state.inspect}").blue
-				puts arguments.join(" ")
-				
 				status = @group.spawn(*arguments)
 				
 				if status != 0
@@ -101,6 +98,7 @@ module Build::Graph::GraphSpec
 		end
 	end
 	
+	# The controller contains all graph nodes and is responsible for executing tasks on the graph. 
 	class Controller < Build::Graph::Controller
 		def initialize(&block)
 			@top = Node.new(self, &block)
@@ -136,23 +134,24 @@ module Build::Graph::GraphSpec
 	describe Build::Graph do
 		it "shouldn't update mtime" do
 			test_glob = Glob.new(__dir__, "*.rb")
-			output_paths = Paths.directory(__dir__, ["listing.txt"])
+			listing_output = Paths.directory(__dir__, ["listing.txt"])
 			
-			FileUtils.rm_f output_paths.to_a
+			FileUtils.rm_f listing_output.to_a
 			
 			node = nil
 			
 			controller = Controller.new do
-				node = process test_glob, output_paths do
-					run("ls", "-la", *test_glob, :out => output_paths.first.for_writing)
+				node = process test_glob, listing_output do
+					run("ls", "-la", *inputs, :out => outputs.first.for_writing)
 				end
 			end
 			
+			expect(controller.top).to_not be nil
 			expect(node).to_not be nil
 			
 			controller.update!
 			
-			mtime = File.mtime(output_paths.first)
+			mtime = File.mtime(listing_output.first)
 			
 			# Ensure the mtime will change even if the granularity of the filesystem is 1 second:
 			sleep(1)
@@ -160,9 +159,9 @@ module Build::Graph::GraphSpec
 			controller.update!
 			
 			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
-			expect(File.mtime(output_paths.first)).to be == mtime
+			expect(File.mtime(listing_output.first)).to be == mtime
 			
-			FileUtils.rm_f output_paths.to_a
+			FileUtils.rm_f listing_output.to_a
 		end
 		
 		it "should compile program and respond to changes in source code" do
