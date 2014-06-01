@@ -151,7 +151,7 @@ module Build::Graph::GraphSpec
 			
 			controller.update!
 			
-			mtime = File.mtime(listing_output.first)
+			mtime = listing_output.first.mtime
 			
 			# Ensure the mtime will change even if the granularity of the filesystem is 1 second:
 			sleep(1)
@@ -159,43 +159,45 @@ module Build::Graph::GraphSpec
 			controller.update!
 			
 			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
-			expect(File.mtime(listing_output.first)).to be == mtime
+			expect(listing_output.first.mtime).to be == mtime
 			
 			FileUtils.rm_f listing_output.to_a
 		end
 		
 		it "should compile program and respond to changes in source code" do
-			program_root = File.join(__dir__, "program")
+			program_root = Path.join(__dir__, "program")
 			code_glob = Glob.new(program_root, "*.cpp")
 			program_path = Path.join(program_root, "dictionary-sort")
-		
+			
 			# FileUtils.touch(code_glob.first)
-		
+			
 			controller = Controller.new do
 				process code_glob, program_path do
 					object_files = inputs.with(extension: ".o") do |input_path, output_path|
 						depfile_path = input_path + ".d"
-					
+						
 						dependencies = Paths.new(input_path)
-					
+						
 						if File.exist? depfile_path
 							depfile = Build::Makefile.load_file(depfile_path)
 							
 							dependencies = depfile[output_path] || dependencies
 						end
-					
-						process dependencies, output_path do
-							# puts "Dependencies for #{output_path.relative_path}: #{dependencies.to_a.inspect}" if wet?
 						
-							run("clang++", "-MMD", "-O3", "-o", output_path.relative_path, "-c", input_path.relative_path, "-std=c++11", chdir: input_path.root)
+						process dependencies, output_path do
+							run("clang++", "-MMD", "-O3",
+								"-o", output_path.shortest_path(input_path.root),
+								"-c", input_path.relative_path, "-std=c++11",
+								chdir: input_path.root
+							)
 						end
 					end
-				
+					
 					process object_files, program_path do
 						run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm", "-pthread")
 					end
 				end
-			
+				
 				process program_path, Paths::NONE do
 					run("./" + program_path.relative_path, chdir: program_path.root)
 				end
@@ -203,8 +205,8 @@ module Build::Graph::GraphSpec
 			
 			controller.update!
 			
-			expect(File.exist?(program_path)).to be true
-			expect(File.mtime(code_glob.first)).to be <= File.mtime(program_path)
+			expect(program_path).to be_exist
+			expect(code_glob.first.mtime).to be <= program_path.mtime
 		end
 	end
 end
