@@ -28,7 +28,7 @@ require 'rainbow'
 
 module Build::Graph::GraphSpec
 	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
-	class Node < Build::Node
+	class Node < Build::Graph::Node
 		include Build::Files
 		
 		def initialize(controller, inputs = Paths::NONE, outputs = Paths::NONE, &update)
