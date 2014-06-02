@@ -19,10 +19,6 @@ Or install it yourself as:
 
     $ gem install build-graph
 
-### Naming
-
-I'd like to call this gem, simply, `build`, but this name is not available.
-
 ## Usage
 
 TODO: Write usage instructions here
