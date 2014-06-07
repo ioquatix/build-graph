@@ -20,6 +20,8 @@
 
 require_relative 'error'
 
+require 'fiber'
+
 module Build
 	module Graph
 		# Represents an input to a graph node, with count inputs.
