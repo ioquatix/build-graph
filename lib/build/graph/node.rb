@@ -69,11 +69,14 @@ module Build
 					@controller.update(directories, @outputs)
 				end
 			end
-		
+			
 			attr :inputs
 			attr :outputs
-		
+			
+			# The IOState for this node.
 			attr :state
+			
+			# The status of this node.
 			attr :status
 		
 			def unknown?
