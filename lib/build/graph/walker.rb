@@ -54,19 +54,21 @@ module Build
 				# Failed output paths:
 				@failed = Set.new
 			end
-		
+			
 			attr :controller
-			attr :output
-		
+			attr :task
+			
+			attr :outputs
+			
 			attr_accessor :count
-		
 			attr :dirty
+			
 			attr :parents
-		
+			
 			def task(*arguments)
 				@task.call(self, *arguments)
 			end
-		
+			
 			def wait_on_paths(paths)
 				edge = Edge.new
 				failed = false
