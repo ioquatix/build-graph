@@ -24,12 +24,14 @@ require 'fiber'
 
 module Build
 	module Graph
-		# Represents an input to a graph node, with count inputs.
+		# Represents a set of inputs to a graph node.
 		class Edge
 			def initialize(count = 0)
 				@fiber = Fiber.current
+				
+				# The number of inputs we are waiting for:
 				@count = count
-			
+				
 				@failed = []
 			end
 		
@@ -37,7 +39,8 @@ module Build
 		
 			attr :fiber
 			attr :count
-		
+			
+			# Wait until all inputs to the edge have been traversed.
 			def wait
 				if @count > 0
 					Fiber.yield
@@ -51,7 +54,8 @@ module Build
 			def failed?
 				@failed.size != 0
 			end
-		
+			
+			# Traverse the edge, mark the edge as failed if the source was also failed.
 			def traverse(node)
 				@count -= 1
 			
@@ -63,7 +67,8 @@ module Build
 					@fiber.resume
 				end
 			end
-		
+			
+			# Increase the number of traversals we are waiting for.
 			def increment!
 				@count += 1
 			end

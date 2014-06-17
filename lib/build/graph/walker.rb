@@ -29,9 +29,10 @@ module Build
 			def initialize(controller, &task)
 				@controller = controller
 				@task = task
-			
+				
+				# The number of nodes we have touched:
 				@count = 0
-			
+				
 				@outputs = {}
 				@dirty = Set.new
 			
@@ -40,9 +41,9 @@ module Build
 					# For a given child, a list of any parents waiting on it.
 					if node.dirty?
 						@dirty << node
-					
+						
 						@outputs[node] = []
-					
+						
 						node.outputs.each do |output|
 							@outputs[output] = []
 						end
@@ -157,7 +158,6 @@ module Build
 				# If all inputs were good, we can update the node.
 				unless any_inputs_failed?
 					begin
-						#self.instance_eval(&update)e
 						yield
 					rescue TransientError => error
 						$stderr.puts Rainbow("Error: #{error.inspect}").red
@@ -174,9 +174,9 @@ module Build
 				elsif wet?
 					@node.clean!
 				end
-			
+				
 				@walker.exit(@node)
-			
+				
 				@walker.count += 1
 			end
 		

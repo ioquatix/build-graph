@@ -27,6 +27,7 @@ require_relative 'edge'
 
 module Build
 	module Graph
+		# The top level graph controller is responsible for managing build graph state.
 		class Controller < Files::Monitor
 			def initialize
 				super
@@ -35,43 +36,46 @@ module Build
 			
 				build_graph!
 			end
-		
+			
 			attr :nodes
-		
-			# You need to override this to traverse the top nodes as required:
+			
+			# Override this to traverse the top nodes as required.
 			def traverse!(walker)
 				#Array(top).each do |node|
 				#	node.update!(walker)
 				#end
 			end
-		
+			
+			# Walk the graph with the given callback.
 			def walk(&block)
 				Walker.new(self, &block)
 			end
-		
+			
+			# Build the initial graph structure.
 			def build_graph!
 				# We build the graph without doing any actual execution:
 				nodes = []
-			
+				
 				walker = walk do |walker, node|
 					nodes << node
 				
 					yield walker, node
 				end
-			
+				
 				traverse! walker
-			
+				
 				# We should update the status of all nodes in the graph once we've traversed the graph.
 				nodes.each do |node|
 					node.update_status!
 				end
 			end
-		
+			
+			# Update the graph and print out timing information.
 			def update_with_log
 				puts Rainbow("*** Graph update traversal ***").green
-			
+				
 				start_time = Time.now
-			
+				
 				walker = update!
 			ensure
 				end_time = Time.now
@@ -80,14 +84,15 @@ module Build
 				$stdout.flush
 				$stderr.puts Rainbow("Graph Update Time: %0.3fs" % elapsed_time).magenta
 			end
-		
+			
+			# Update the graph.
 			def update!
 				walker = walk do |walker, node|
 					yield walker, node
 				end
-			
+				
 				traverse! walker
-			
+				
 				return walker
 			end
 		end
