@@ -54,6 +54,9 @@ module Build
 			
 				# Failed output paths:
 				@failed = Set.new
+				
+				# The number of failed nodes:
+				@failures = 0
 			end
 			
 			attr :controller
@@ -66,10 +69,11 @@ module Build
 			
 			attr :parents
 			
+			# A list of outputs which have failed to generate:
 			attr :failed
 			
 			def failed?
-				@failed.size > 0
+				@failures > 0
 			end
 			
 			def task(*arguments)
@@ -114,8 +118,11 @@ module Build
 				@dirty.delete(node)
 			
 				# Fail outputs if the node failed:
-				@failed += node.outputs if node.failed?
-			
+				if node.failed?
+					@failed += node.outputs
+					@failures += 1
+				end
+				
 				# Clean the node's outputs:
 				node.outputs.each do |path|
 					if edges = @outputs.delete(path)
