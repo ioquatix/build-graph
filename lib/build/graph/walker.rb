@@ -66,6 +66,12 @@ module Build
 			
 			attr :parents
 			
+			attr :failed
+			
+			def failed?
+				@failed.size > 0
+			end
+			
 			def task(*arguments)
 				@task.call(self, *arguments)
 			end
