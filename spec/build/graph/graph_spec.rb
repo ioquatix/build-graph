@@ -83,10 +83,11 @@ module Build::Graph::GraphSpec
 		
 		def run(*arguments)
 			if wet?
+				puts Rainbow(arguments.join(' ')).blue
 				status = @group.spawn(*arguments)
 				
 				if status != 0
-					raise RuntimeError.new(status)
+					raise CommandError.new(status)
 				end
 			end
 		end
