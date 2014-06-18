@@ -69,8 +69,6 @@ module Build::Graph::GraphSpec
 			inputs = Build::Files::List.coerce(inputs)
 			outputs = Build::Files::List.coerce(outputs)
 			
-			puts Rainbow("process #{inputs} -> #{outputs}").green
-			
 			child_node = @controller.nodes.fetch([inputs, outputs]) do |key|
 				@controller.nodes[key] = Node.new(@controller, inputs, outputs, &block)
 			end
