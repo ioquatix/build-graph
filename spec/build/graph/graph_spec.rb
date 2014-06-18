@@ -122,11 +122,13 @@ module Build::Graph::GraphSpec
 		def update!
 			group = Process::Group.new
 			
-			super do |walker, node|
+			walker = super do |walker, node|
 				Task.new(self, walker, node, group)
 			end
 			
 			group.wait
+			
+			return walker
 		end
 	end
 	
@@ -204,7 +206,8 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			controller.update!
+			walker = controller.update!
+			expect(walker).to be_kind_of Build::Graph::Walker
 			
 			expect(program_path).to be_exist
 			expect(code_glob.first.mtime).to be <= program_path.mtime

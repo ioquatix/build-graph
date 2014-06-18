@@ -77,6 +77,8 @@ module Build
 				start_time = Time.now
 				
 				walker = update!
+				
+				return walker
 			ensure
 				end_time = Time.now
 				elapsed_time = end_time - start_time
