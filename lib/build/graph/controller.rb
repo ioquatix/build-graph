@@ -97,6 +97,11 @@ module Build
 				
 				return walker
 			end
+			
+			# What to do when a task has a trasient failure:
+			def task_failure(error, task)
+				$stderr.puts Rainbow("Error: #{error.inspect}").red
+			end
 		end
 	end
 end

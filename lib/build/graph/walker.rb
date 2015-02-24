@@ -149,9 +149,9 @@ module Build
 			
 				@children = []
 			end
-		
+			
 			attr :children
-		
+			
 			def inputs
 				@node.inputs
 			end
@@ -173,7 +173,7 @@ module Build
 					begin
 						yield
 					rescue TransientError => error
-						$stderr.puts Rainbow("Error: #{error.inspect}").red
+						@controller.task_failure!(error, self)
 						@error = error
 					end
 				end
