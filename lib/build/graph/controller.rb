@@ -31,9 +31,9 @@ module Build
 		class Controller < Files::Monitor
 			def initialize
 				super
-			
+				
 				@nodes = {}
-			
+				
 				build_graph!
 			end
 			
@@ -58,7 +58,7 @@ module Build
 				
 				walker = walk do |walker, node|
 					nodes << node
-				
+					
 					yield walker, node
 				end
 				

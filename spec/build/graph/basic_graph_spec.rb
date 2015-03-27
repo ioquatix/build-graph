@@ -1,3 +1,4 @@
+#!/usr/bin/env rspec
 # Copyright, 2012, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,123 +19,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'build/graph'
-require 'build/files'
+require 'build/graph/basic'
 require 'build/makefile'
 
-require 'process/group'
 require 'fileutils'
-require 'rainbow'
 
 module Build::Graph::GraphSpec
-	# The graph node is created once, so a graph has a fixed number of nodes, which store per-vertex state and connectivity.
-	class Node < Build::Graph::Node
-		include Build::Files
-		
-		def initialize(controller, inputs = Paths::NONE, outputs = Paths::NONE, &update)
-			@update = update
-			
-			super(controller, inputs, outputs)
-		end
-		
-		def apply!(scope)
-			scope.instance_eval(&@update)
-		end
-		
-		# This ensures that enclosed nodes are run if they are dirty. The top level node has no inputs or outputs by default, so children who become dirty wouldn't mark it as dirty and thus wouldn't be run.
-		def requires_update?
-			if outputs.count == 0
-				return true
-			else
-				super
-			end
-		end
-	end
-	
-	# The task is the context in which a vertex is updated. Because nodes may initially create other nodes, it is also responsible for looking up and creating new nodes.
-	class Task < Build::Graph::Task
-		include Build::Files
-		
-		def initialize(controller, walker, node, group = nil)
-			super(controller, walker, node)
-			
-			@group = group
-		end
-		
-		def wet?
-			@group and @node.dirty?
-		end
-		
-		def process(inputs, outputs, &block)
-			inputs = Build::Files::List.coerce(inputs)
-			outputs = Build::Files::List.coerce(outputs)
-			
-			child_node = @controller.nodes.fetch([inputs, outputs]) do |key|
-				@controller.nodes[key] = Node.new(@controller, inputs, outputs, &block)
-			end
-			
-			@children << child_node
-			
-			# State saved in update!
-			child_node.update!(@walker)
-			
-			return child_node
-		end
-		
-		def run(*arguments)
-			if wet?
-				puts Rainbow(arguments.join(' ')).blue
-				status = @group.spawn(*arguments)
-				
-				if status != 0
-					raise CommandError.new(status)
-				end
-			end
-		end
-		
-		def visit
-			super do
-				@node.apply!(self)
-			end
-		end
-	end
-	
-	# The controller contains all graph nodes and is responsible for executing tasks on the graph. 
-	class Controller < Build::Graph::Controller
-		def initialize(&block)
-			@top = Node.new(self, &block)
-			
-			super()
-		end
-		
-		attr_accessor :top
-		
-		def traverse!(walker)
-			@top.update!(walker)
-		end
-		
-		def build_graph!
-			super do |walker, node|
-				Task.new(self, walker, node)
-			end
-		end
-		
-		def update!
-			group = Process::Group.new
-			
-			walker = super do |walker, node|
-				Task.new(self, walker, node, group)
-			end
-			
-			group.wait
-			
-			return walker
-		end
-	end
-	
+	include Build::Graph::Basic
 	include Build::Files
 	
-	describe Build::Graph do
+	describe Build::Graph::Basic do
 		it "shouldn't update mtime" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])

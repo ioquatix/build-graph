@@ -132,25 +132,25 @@ module Build
 			# Perform some actions to update this node, returns when completed, and the node is no longer dirty.
 			def update!(walker)
 				#puts "Walking #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect} (dirty=#{dirty?} @fiber=#{@fiber.inspect})"
-			
+				
 				# If a fiber already exists, this node is in the process of updating.
 				if requires_update? and @fiber == nil
 					# puts "Beginning: #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
-				
+					
 					@fiber = Fiber.new do
 						task = walker.task(self)
-					
+						
 						task.visit
-					
+						
 						# Commit changes:
 						# puts "** Committing: #{@inputs.to_a.inspect} -> #{@outputs.to_a.inspect}"
-					
+						
 						@state.update!
 						@fiber = nil
-					
+						
 						task.exit
 					end
-			
+					
 					@fiber.resume
 				end
 			end
