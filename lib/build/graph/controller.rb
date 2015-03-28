@@ -28,7 +28,7 @@ require_relative 'edge'
 module Build
 	module Graph
 		# The top level graph controller is responsible for managing build graph state.
-		class Controller < Files::Monitor
+		class Controller
 			def initialize
 				super
 				

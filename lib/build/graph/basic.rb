@@ -45,6 +45,10 @@ module Build
 				def apply!(scope)
 					scope.instance_eval(&@update)
 				end
+				
+				def inspect
+					super + " -> {#{@update.inspect}}"
+				end
 			end
 			
 			# The task is the context in which a vertex is updated. Because nodes may initially create other nodes, it is also responsible for looking up and creating new nodes.
@@ -71,6 +75,7 @@ module Build
 					end
 					
 					child_node = @controller.nodes.fetch([inputs, outputs]) do |key|
+						puts "Fetching #{key.inspect}"
 						@controller.nodes[key] = Node.new(@controller, inputs, outputs, &block)
 					end
 					

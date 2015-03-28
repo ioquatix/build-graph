@@ -20,38 +20,29 @@
 
 require 'set'
 
+require_relative 'edge'
 require_relative 'error'
 
 module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
-			def initialize(controller, &task)
-				@controller = controller
-				@task = task
+			def initialize(nodes = Set.new, &block)
+				@nodes = nodes
+				
+				# Node -> Task mapping.
+				@tasks = {}
+				
+				@update = block
 				
 				# The number of nodes we have touched:
 				@count = 0
 				
 				@outputs = {}
-				@dirty = Set.new
-			
-				# Generate a list of dirty outputs, possibly a subset, if the build graph might generate additional nodes:
-				@controller.nodes.each do |key, node|
-					# For a given child, a list of any parents waiting on it.
-					if node.dirty?
-						@dirty << node
-						
-						@outputs[node] = []
-						
-						node.outputs.each do |output|
-							@outputs[output] = []
-						end
-					end
-				end
-			
+				@dirty = Set.new(@nodes)
+				
 				@parents = {}
-			
+				
 				# Failed output paths:
 				@failed = Set.new
 				
@@ -59,12 +50,11 @@ module Build
 				@failures = 0
 			end
 			
-			attr :controller
-			attr :task
+			attr :nodes
 			
 			attr :outputs
 			
-			attr_accessor :count
+			attr :count
 			attr :dirty
 			
 			attr :parents
@@ -72,12 +62,17 @@ module Build
 			# A list of outputs which have failed to generate:
 			attr :failed
 			
-			def failed?
-				@failures > 0
+			# The count of nodes which have failed.
+			attr :failures
+			
+			def update(nodes)
+				nodes.each do |node|
+					@update.call(self, node)
+				end
 			end
 			
-			def task(*arguments)
-				@task.call(self, *arguments)
+			def failed?
+				@failures > 0
 			end
 			
 			def wait_on_paths(paths)
@@ -99,116 +94,46 @@ module Build
 				edge.wait || failed
 			end
 		
-			def wait_for_nodes(children)
+			def wait_for_tasks(children)
 				edge = Edge.new
 			
 				children.each do |child|
-					if @dirty.include?(child)
+					if @dirty.include?(child.node)
 						edge.increment!
 					
-						@parents[child] ||= []
-						@parents[child] << edge
+						@parents[child.node] ||= []
+						@parents[child.node] << edge
 					end
 				end
 			
 				edge.wait
 			end
-		
-			def exit(node)
-				@dirty.delete(node)
 			
+			def exit(task)
+				@count += 1
+				
+				@dirty.delete(task.node)
+				
 				# Fail outputs if the node failed:
-				if node.failed?
-					@failed += node.outputs
+				if task.failed?
+					if task.outputs
+						@failed += task.outputs
+					end
+					
 					@failures += 1
 				end
 				
 				# Clean the node's outputs:
-				node.outputs.each do |path|
+				task.outputs.each do |path|
 					if edges = @outputs.delete(path)
-						edges.each{|edge| edge.traverse(node)}
+						edges.each{|edge| edge.traverse(task)}
 					end
 				end
-		
+				
 				# Trigger the parent nodes:
-				if parents = @parents.delete(node)
-					parents.each{|edge| edge.traverse(node)}
+				if parents = @parents.delete(task.node)
+					parents.each{|edge| edge.traverse(task)}
 				end
-			end
-		end
-	
-		# A task is a specific process and scope applied to a graph node.
-		class Task
-			def initialize(controller, walker, node)
-				@controller = controller
-				@node = node
-				@walker = walker
-			
-				# If the execution of the node fails, this is where we save the error:
-				@error = nil
-			
-				@children = []
-			end
-			
-			attr :children
-			
-			def inputs
-				@node.inputs
-			end
-		
-			def outputs
-				@node.outputs
-			end
-		
-			def wet?
-				@node.dirty?
-			end
-		
-			# Derived task should override this function to provide appropriate behaviour.
-			def visit
-				wait_for_inputs
-			
-				# If all inputs were good, we can update the node.
-				unless any_inputs_failed?
-					begin
-						yield
-					rescue TransientError => error
-						@controller.task_failure!(error, self)
-						@error = error
-					end
-				end
-			
-				wait_for_children
-			end
-		
-			def exit
-				if @error || any_child_failed? || any_inputs_failed?
-					@node.fail!
-				elsif wet?
-					@node.clean!
-				end
-				
-				@walker.exit(@node)
-				
-				@walker.count += 1
-			end
-		
-		protected
-			def wait_for_inputs
-				# Wait on any inputs, returns whether any inputs failed:
-				@inputs_failed = @walker.wait_on_paths(@node.inputs)
-			end
-		
-			def wait_for_children
-				@walker.wait_for_nodes(@children)
-			end
-		
-			def any_child_failed?
-				@children.any?{|child| child.failed?}
-			end
-		
-			def any_inputs_failed?
-				@inputs_failed
 			end
 		end
 	end

@@ -24,8 +24,10 @@ module Build
 	module Graph
 		# This is a special output which represents all the outputs of the children of the given node. Provided that all well defined outputs are immutable, this output is also in effect immutable.
 		class InheritOutputs < Build::Files::List
-			def initialize(node)
-				@node = node
+			def initialize(task)
+				@task = task
+				
+				@exclusive = false
 			end
 			
 			attr :node
@@ -33,17 +35,24 @@ module Build
 			def each
 				return to_enum(:each) unless block_given?
 				
-				@node.children.each do |child_node|
+				puts @task.node.inspect
+				puts @task.children.inspect
+				
+				abort("Invalid usage of each") if @exclusive
+				
+				@exclusive = true
+				@task.children.each do |child_node|
 					child_node.outputs.each{|path| yield path}
 				end
+				@exclusive = false
 			end
 			
 			def eql?(other)
-				self.class.eql?(other.class) and @node.eql?(other.node)
+				self.object_id.eql?(other.object_id)
 			end
 
 			def hash
-				@node.hash
+				self.object_id.hash
 			end
 		end
 	end

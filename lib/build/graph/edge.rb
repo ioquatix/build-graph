@@ -56,11 +56,11 @@ module Build
 			end
 			
 			# Traverse the edge, mark the edge as failed if the source was also failed.
-			def traverse(node)
+			def traverse(task)
 				@count -= 1
 			
-				if node.failed?
-					@failed << node
+				if task.failed?
+					@failed << task
 				end
 			
 				if @count == 0

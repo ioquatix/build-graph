@@ -1,4 +1,5 @@
-# Copyright, 2014, by Samuel G. D. Williams. <http://www.codeotaku.com>
+#!/usr/bin/env rspec
+# Copyright, 2012, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,34 +19,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'build/files/state'
+require 'build/graph/basic'
+require 'build/makefile'
 
-require 'rainbow'
+require 'fileutils'
 
-module Build
-	module Graph
-		# This is essentialy a immutable key:
-		class Node
-			def initialize(inputs, outputs, process)
-				# These are immutable - rather than change them, create a new node:
-				@inputs = inputs
-				@outputs = outputs
-				
-				# Represents an abstract process, e.g. a name or a function.
-				@process = process
+module Build::Graph::InheritSpec
+	include Build::Graph::Basic
+	include Build::Files
+	
+	describe Build::Graph::Basic do
+		it "should inherit children outputs", :focus do
+			test_glob = Glob.new(__dir__, "*.rb")
+			listing_output = Paths.directory(__dir__, ["listing.txt"])
+			
+			node = nil
+			
+			controller = Controller.new do
+				node = process test_glob, :inherit do
+					process test_glob, listing_output do
+						run("ls", "-la", *inputs, :out => outputs.first.for_writing)
+					end
+				end
 			end
 			
-			attr :inputs
-			attr :outputs
-			attr :process
-			
-			def eql?(other)
-				other.kind_of?(self.class) and @inputs.eql?(other.inputs) and @outputs.eql?(other.outputs) and @process.eql?(other.process)
-			end
-			
-			def hash
-				[@inputs, @outputs, @process].hash
-			end
+			expect(node.outputs.to_a).to be == listing_output.to_a
 		end
 	end
 end
