@@ -27,32 +27,28 @@ module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
-			def initialize(nodes = Set.new, &block)
-				@nodes = nodes
-				
+			def initialize(&block)
 				# Node -> Task mapping.
 				@tasks = {}
 				
 				@update = block
 				
-				# The number of nodes we have touched:
-				@count = 0
-				
 				@outputs = {}
-				@dirty = Set.new(@nodes)
+				@dirty = Set.new
 				
 				@parents = {}
 				
 				# Failed output paths:
-				@failed = Set.new
-				
-				# The number of failed nodes:
-				@failures = 0
+				@failed = []
+				@failed_outputs = Set.new
 			end
 			
-			attr :nodes
+			attr :tasks # {Node => Task}
 			
 			attr :outputs
+			
+			attr :failed
+			attr :failed_outputs
 			
 			attr :count
 			attr :dirty
@@ -60,14 +56,21 @@ module Build
 			attr :parents
 			
 			# A list of outputs which have failed to generate:
-			attr :failed
-			
-			# The count of nodes which have failed.
-			attr :failures
+			attr :failed_outputs
 			
 			def update(nodes)
 				nodes.each do |node|
 					@update.call(self, node)
+				end
+			end
+			
+			def call(node)
+				# We try to fetch the task if it has already been invoked, otherwise we create a new task.
+				@tasks.fetch(node) do
+					@update.call(self, node)
+					
+					# This should now be defined:
+					@tasks[node]
 				end
 			end
 			
@@ -76,27 +79,26 @@ module Build
 			end
 			
 			def wait_on_paths(paths)
+				# We create a new directed hyper-graph edge which waits for all paths to be ready (or failed):
 				edge = Edge.new
-				failed = false
-			
+				
 				paths.each do |path|
-					if @outputs.include? path
-						@outputs[path] << edge
-					
+					# Is there a task generating this output?
+					if outputs = @outputs[path]
+						# When the output is ready, trigger this edge:
+						outputs << edge
 						edge.increment!
 					end
-				
-					if !failed and @failed.include?(path)
-						failed = true
-					end
 				end
-			
+				
+				failed = paths.any?{|path| @failed_outputs.include? path}
+				
 				edge.wait || failed
 			end
 		
 			def wait_for_tasks(children)
 				edge = Edge.new
-			
+				
 				children.each do |child|
 					if @dirty.include?(child.node)
 						edge.increment!
@@ -109,18 +111,20 @@ module Build
 				edge.wait
 			end
 			
+			def enter(task)
+				@tasks[task.node] = task
+			end
+			
 			def exit(task)
-				@count += 1
-				
 				@dirty.delete(task.node)
 				
 				# Fail outputs if the node failed:
 				if task.failed?
-					if task.outputs
-						@failed += task.outputs
-					end
+					@failed << task
 					
-					@failures += 1
+					if task.outputs
+						@failed_outputs += task.outputs
+					end
 				end
 				
 				# Clean the node's outputs:
@@ -134,6 +138,15 @@ module Build
 				if parents = @parents.delete(task.node)
 					parents.each{|edge| edge.traverse(task)}
 				end
+			end
+			
+			def clear_failed
+				@failed.each do |task|
+					@tasks.delete(task.node)
+				end if @failed
+				
+				@failed = []
+				@failed_outputs = Set.new
 			end
 		end
 	end

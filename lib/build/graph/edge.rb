@@ -58,11 +58,12 @@ module Build
 			# Traverse the edge, mark the edge as failed if the source was also failed.
 			def traverse(task)
 				@count -= 1
-			
+				
+				# The entire edge fails if any individual task fails.
 				if task.failed?
 					@failed << task
 				end
-			
+				
 				if @count == 0
 					@fiber.resume
 				end

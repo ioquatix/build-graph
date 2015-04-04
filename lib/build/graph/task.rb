@@ -28,6 +28,8 @@ module Build
 			def initialize(walker, node)
 				@walker = walker
 				
+				@walker.tasks[node] = self
+				
 				@node = node
 				
 				# If the execution of the node fails, this is where we save the error:
@@ -55,6 +57,9 @@ module Build
 			
 			# Derived task should override this function to provide appropriate behaviour.
 			def visit
+				# Inforn the walker a new task is being generated for this node:
+				@walker.enter(self)
+				
 				@fiber = Fiber.new do
 					# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.
 					@inputs = @node.inputs.to_paths
@@ -80,7 +85,19 @@ module Build
 					@walker.exit(self)
 				end
 				
+				# Schedule the work, hopefully synchronously:
 				@fiber.resume
+				
+				# This allows the child task to be passed back to the parent when it is first invoked.
+				return self
+			end
+			
+			def invoke(node)
+				child_task = @walker.call(node)
+				
+				raise ArgumentError.new("Invalid child task") unless child_task
+				
+				@children << child_task
 			end
 			
 			def failed?

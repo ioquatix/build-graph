@@ -20,26 +20,47 @@
 # THE SOFTWARE.
 
 require 'build/graph/node'
+require 'build/graph/walker'
+require 'build/graph/task'
 require 'build/files/glob'
 
-module Build::Graph::NodeSpec
+module Build::Graph::TaskSpec
 	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Node do
-		it "should be unique" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
+	describe Build::Graph::Task do
+		it "should wait for children" do
+			node_a = Node.new(Paths::NONE, Paths::NONE, "a")
+			node_b = Node.new(Paths::NONE, Paths::NONE, "b")
 			
-			node_a = Node.new(test_glob, listing_output, "a")
-			node_b = Node.new(listing_output, Paths::NONE, "b")
+			nodes = Set.new([node_a])
 			
-			expect(node_a).to be_eql node_a
-			expect(node_a).to_not be_eql node_b
+			sequence = []
 			
-			node_c = Node.new(test_glob, listing_output, "a")
+			# A walker runs repeatedly, updating tasks which have been marked as dirty.
+			walker = Walker.new do |walker, node|
+				task = Task.new(walker, node)
+				
+				task.visit do
+					sequence << node.process.upcase
+					
+					if node.process == 'a'
+						# This will invoke node_b concurrently, but as it is a child, task.visit won't finish until node_b is done.
+						task.invoke(node_b)
+					end
+				end
+				
+				sequence << node.process
+			end
 			
-			expect(node_a).to be_eql node_c
+			walker.update(nodes)
+			
+			expect(walker.tasks.count).to be == 2
+			expect(walker.failed.count).to be == 0
+			
+			task_b = walker.tasks[node_b]
+			expect(walker.tasks[node_a].children).to be == [task_b]
+			expect(sequence).to be == ['A', 'B', 'b', 'a']
 		end
 	end
 end

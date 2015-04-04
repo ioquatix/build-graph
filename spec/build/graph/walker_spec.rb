@@ -41,7 +41,7 @@ module Build::Graph::WalkerSpec
 			sequence = []
 			
 			# A walker runs repeatedly, updating tasks which have been marked as dirty.
-			walker = Walker.new(nodes) do |walker, node|
+			walker = Walker.new do |walker, node|
 				task = Task.new(walker, node)
 				
 				task.visit do
@@ -51,7 +51,8 @@ module Build::Graph::WalkerSpec
 			
 			walker.update(nodes)
 			
-			expect(walker.count).to be == 2
+			expect(walker.tasks.count).to be == 2
+			expect(walker.failed.count).to be == 0
 			expect(sequence).to be == ['a', 'b']
 		end
 		
@@ -66,7 +67,7 @@ module Build::Graph::WalkerSpec
 			nodes = Set.new([node_a, node_b])
 			
 			# A walker runs repeatedly, updating tasks which have been marked as dirty.
-			walker = Walker.new(nodes) do |walker, node|
+			walker = Walker.new do |walker, node|
 				task = Task.new(walker, node)
 				
 				task.visit do
@@ -78,10 +79,15 @@ module Build::Graph::WalkerSpec
 			
 			walker.update(nodes)
 			
-			expect(walker.count).to be == 2
-			expect(walker.failures).to be == 2
-			expect(listing_output).to be_intersect walker.failed
-			expect(summary_output).to be_intersect walker.failed
+			expect(walker.tasks.count).to be == 2
+			expect(walker.failed.count).to be == 2
+			expect(listing_output).to be_intersect walker.failed_outputs
+			expect(summary_output).to be_intersect walker.failed_outputs
+			
+			walker.clear_failed
+			
+			expect(walker.tasks.count).to be == 0
+			expect(walker.failed.count).to be == 0
 		end
 	end
 end
