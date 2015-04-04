@@ -19,31 +19,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'build/graph/basic'
-require 'build/makefile'
-
-require 'fileutils'
+require 'build/graph/walker'
+require 'build/graph/task'
+require 'build/files'
 
 module Build::Graph::InheritSpec
-	include Build::Graph::Basic
+	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Basic do
+	describe Build::Graph::Walker do
 		it "should inherit children outputs", :focus do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
 			
-			node = nil
+			node_a = Node.new(Paths::NONE, :inherit, "a")
+			node_b = Node.new(test_glob, listing_output, "b")
 			
-			controller = Controller.new do
-				node = process test_glob, :inherit do
-					process test_glob, listing_output do
-						run("ls", "-la", *inputs, :out => outputs.first.for_writing)
+			walker = Walker.new do |walker, node|
+				task = Task.new(walker, node)
+				
+				task.visit do
+					if node.process == 'a'
+						task.invoke(node_b)
 					end
 				end
 			end
 			
-			expect(node.outputs.to_a).to be == listing_output.to_a
+			walker.update([node_a])
+			
+			task_a = walker.tasks[node_a]
+			task_b = walker.tasks[node_b]
+			
+			expect(task_a.outputs.to_a).to be == task_b.outputs.to_a
 		end
 	end
 end

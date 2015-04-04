@@ -20,6 +20,7 @@
 
 require 'set'
 
+require_relative 'node'
 require_relative 'edge'
 require_relative 'error'
 

@@ -18,10 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'build/files/state'
-
-require 'rainbow'
-
 module Build
 	module Graph
 		class Task
@@ -80,7 +76,11 @@ module Build
 					end
 					
 					@state ||= :complete
-					@outputs = @node.outputs.to_paths
+					if @node.outputs == :inherit
+						@outputs = @children.collect(&:outputs).inject(&:+)
+					else
+						@outputs = @node.outputs.to_paths
+					end
 					
 					@walker.exit(self)
 				end
