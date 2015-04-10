@@ -20,6 +20,7 @@
 
 require 'set'
 
+require_relative 'task'
 require_relative 'node'
 require_relative 'edge'
 require_relative 'error'
@@ -40,7 +41,7 @@ module Build
 				@parents = {}
 				
 				# Failed output paths:
-				@failed = []
+				@failed_tasks = []
 				@failed_outputs = Set.new
 			end
 			
@@ -48,16 +49,13 @@ module Build
 			
 			attr :outputs
 			
-			attr :failed
+			attr :failed_tasks
 			attr :failed_outputs
 			
 			attr :count
 			attr :dirty
 			
 			attr :parents
-			
-			# A list of outputs which have failed to generate:
-			attr :failed_outputs
 			
 			def update(nodes)
 				nodes.each do |node|
@@ -76,7 +74,7 @@ module Build
 			end
 			
 			def failed?
-				@failures > 0
+				@failed_tasks.size > 0
 			end
 			
 			def wait_on_paths(paths)
@@ -121,7 +119,7 @@ module Build
 				
 				# Fail outputs if the node failed:
 				if task.failed?
-					@failed << task
+					@failed_tasks << task
 					
 					if task.outputs
 						@failed_outputs += task.outputs
@@ -142,11 +140,11 @@ module Build
 			end
 			
 			def clear_failed
-				@failed.each do |task|
+				@failed_tasks.each do |task|
 					@tasks.delete(task.node)
-				end if @failed
+				end if @failed_tasks
 				
-				@failed = []
+				@failed_tasks = []
 				@failed_outputs = Set.new
 			end
 		end

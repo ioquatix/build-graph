@@ -34,9 +34,9 @@ module Build
 				
 				@failed = []
 			end
-		
+			
 			attr :failed
-		
+			
 			attr :fiber
 			attr :count
 			
@@ -48,9 +48,9 @@ module Build
 			
 				failed?
 			end
-		
+			
 			attr :failed
-		
+			
 			def failed?
 				@failed.size != 0
 			end

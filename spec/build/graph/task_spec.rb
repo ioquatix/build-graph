@@ -56,7 +56,7 @@ module Build::Graph::TaskSpec
 			walker.update(nodes)
 			
 			expect(walker.tasks.count).to be == 2
-			expect(walker.failed.count).to be == 0
+			expect(walker.failed_tasks.count).to be == 0
 			
 			task_b = walker.tasks[node_b]
 			expect(walker.tasks[node_a].children).to be == [task_b]

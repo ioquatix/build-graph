@@ -52,7 +52,7 @@ module Build::Graph::WalkerSpec
 			walker.update(nodes)
 			
 			expect(walker.tasks.count).to be == 2
-			expect(walker.failed.count).to be == 0
+			expect(walker.failed_tasks.count).to be == 0
 			expect(sequence).to be == ['a', 'b']
 		end
 		
@@ -80,14 +80,14 @@ module Build::Graph::WalkerSpec
 			walker.update(nodes)
 			
 			expect(walker.tasks.count).to be == 2
-			expect(walker.failed.count).to be == 2
+			expect(walker.failed_tasks.count).to be == 2
 			expect(listing_output).to be_intersect walker.failed_outputs
 			expect(summary_output).to be_intersect walker.failed_outputs
 			
 			walker.clear_failed
 			
 			expect(walker.tasks.count).to be == 0
-			expect(walker.failed.count).to be == 0
+			expect(walker.failed_tasks.count).to be == 0
 		end
 	end
 end

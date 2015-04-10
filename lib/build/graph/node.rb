@@ -46,6 +46,10 @@ module Build
 			def hash
 				[@inputs, @outputs, @process].hash
 			end
+			
+			def self.top(inputs = [], outputs = :inherit, &block)
+				self.new(inputs, outputs, block)
+			end
 		end
 	end
 end
