@@ -58,7 +58,7 @@ module Build
 			attr :parents
 			
 			def update(nodes)
-				nodes.each do |node|
+				Array(nodes).each do |node|
 					@update.call(self, node)
 				end
 			end

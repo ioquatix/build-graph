@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 require 'build/files/state'
+require 'build/files'
 
 require 'rainbow'
 
@@ -47,7 +48,7 @@ module Build
 				[@inputs, @outputs, @process].hash
 			end
 			
-			def self.top(inputs = [], outputs = :inherit, &block)
+			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, &block)
 				self.new(inputs, outputs, block)
 			end
 		end

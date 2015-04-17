@@ -35,9 +35,13 @@ module Build::Graph::GraphSpec
 			inputs = Build::Files::List.coerce(inputs)
 			outputs = Build::Files::List.coerce(outputs)
 			
-			node = Node.new(inputs, outputs, block)
+			node = Build::Graph::Node.new(inputs, outputs, block)
 			
 			self.invoke(node)
+		end
+		
+		def wet?
+			@group != nil
 		end
 		
 		def run(*arguments)

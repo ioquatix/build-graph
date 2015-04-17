@@ -57,7 +57,7 @@ module Build
 				@walker.enter(self)
 				
 				@fiber = Fiber.new do
-					update_inputs
+					update_inputs_and_outputs
 					
 					# If all inputs were good, we can update the node.
 					if wait_for_inputs?
@@ -105,16 +105,18 @@ module Build
 			end
 			
 		protected
-			def update_inputs
+			def update_inputs_and_outputs
 				# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.
 				@inputs = @node.inputs.to_paths
+				
+				if @node.outputs != :inherit
+					@outputs = @node.outputs.to_paths
+				end
 			end
 			
 			def update_outputs
 				if @node.outputs == :inherit
 					@outputs = @children.collect(&:outputs).inject(&:+)
-				else
-					@outputs = @node.outputs.to_paths
 				end
 			end
 			
