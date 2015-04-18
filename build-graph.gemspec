@@ -23,13 +23,13 @@ Gem::Specification.new do |spec|
 	spec.required_ruby_version = '>= 2.0'
 	
 	spec.add_dependency "process-group", "~> 0.2.1"
-	spec.add_dependency "build-files", "~> 0.3.0"
+	spec.add_dependency "build-files", "~> 0.3.1"
 	
 	spec.add_dependency "system"
 	spec.add_dependency "rainbow", "~> 2.0.0"
 	
 	spec.add_development_dependency "bundler", "~> 1.3"
 	spec.add_development_dependency "rspec", "~> 3.0.0"
-	spec.add_development_dependency "build-makefile", "~> 0.2.0"
+	spec.add_development_dependency "build-makefile", "~> 0.3.0"
 	spec.add_development_dependency "rake"
 end

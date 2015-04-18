@@ -21,6 +21,7 @@
 
 require 'build/graph/node'
 require 'build/files/glob'
+require 'build/files/path/filesystem'
 
 module Build::Graph::NodeSpec
 	include Build::Graph
@@ -40,6 +41,28 @@ module Build::Graph::NodeSpec
 			node_c = Node.new(test_glob, listing_output, "a")
 			
 			expect(node_a).to be_eql node_c
+		end
+		
+		it "should be dirty" do
+			test_glob = Glob.new(__dir__, "*.rb")
+			listing_output = Paths.directory(__dir__, ["listing.txt"])
+			
+			node_a = Node.new(test_glob, listing_output, "a")
+			
+			expect(node_a.dirty?).to be true
+		end
+		
+		it "should be clean" do
+			test_glob = Glob.new(__dir__, "*.rb")
+			listing_output = Paths.directory(__dir__, ["listing.txt"])
+			
+			listing_output.first.touch
+			
+			node_a = Node.new(test_glob, listing_output, "a")
+			
+			expect(node_a.dirty?).to be false
+			
+			listing_output.first.delete
 		end
 	end
 end

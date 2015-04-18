@@ -40,6 +40,31 @@ module Build
 			attr :outputs
 			attr :process
 			
+			def inherits_outputs?
+				@outputs == :inherit
+			end
+			
+			def modified_time
+				modified_time = @inputs.map{|path| path.modified_time}.max
+			end
+			
+			def dirty?
+				if inherits_outputs?
+					true
+				else
+					# Dirty if any outputs don't exist:
+					return true if @outputs.any?{|path| !path.exist?}
+					
+					# Dirty if input modified after any output:
+					input_modified_time = self.modified_time
+					
+					# Outputs should always be more recent than their inputs:
+					return true if @outputs.any?{|output_path| output_path.modified_time < input_modified_time}
+				end
+				
+				return false
+			end
+			
 			def eql?(other)
 				other.kind_of?(self.class) and @inputs.eql?(other.inputs) and @outputs.eql?(other.outputs) and @process.eql?(other.process)
 			end

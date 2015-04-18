@@ -67,10 +67,19 @@ module Build::Graph::GraphSpec
 			end
 		end
 		
-		def update(group = nil)
-			@group = group
+		def dirty?
+			state = ::Build::Files::IOState.new(inputs, outputs)
 			
-			@node.evaluate(self)
+			state.update!
+			
+			return state.dirty?
+		end
+		
+		def update(group = nil)
+			if @node.inherits_outputs? or self.dirty?
+				@group = group
+				@node.evaluate(self)
+			end
 		end
 	end
 	
@@ -109,6 +118,12 @@ module Build::Graph::GraphSpec
 			
 			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
 			expect(listing_output.first.mtime).to be == mtime
+			
+			FileUtils.rm_f listing_output.to_a
+			
+			walker.update(top)
+			
+			expect(listing_output.first.mtime).to be > mtime
 			
 			FileUtils.rm_f listing_output.to_a
 		end
