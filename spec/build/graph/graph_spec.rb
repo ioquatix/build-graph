@@ -30,12 +30,24 @@ module Build::Graph::GraphSpec
 	include Build::Graph
 	include Build::Files
 	
+	class ProcessNode < Node
+		def initialize(inputs, outputs, block)
+			super(inputs, outputs, block.source_location)
+			
+			@block = block
+		end
+		
+		def evaluate(context)
+			context.instance_eval(&@block)
+		end
+	end
+	
 	class ProcessTask < Task
 		def process(inputs, outputs, &block)
 			inputs = Build::Files::List.coerce(inputs)
 			outputs = Build::Files::List.coerce(outputs)
 			
-			node = Build::Graph::Node.new(inputs, outputs, block)
+			node = ProcessNode.new(inputs, outputs, block)
 			
 			self.invoke(node)
 		end
@@ -58,7 +70,7 @@ module Build::Graph::GraphSpec
 		def update(group = nil)
 			@group = group
 			
-			self.instance_eval(&@node.process)
+			@node.evaluate(self)
 		end
 	end
 	
@@ -80,7 +92,7 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			top = Node.top do
+			top = ProcessNode.top do
 				process test_glob, listing_output do
 					run("ls", "-la", *inputs, :out => outputs.first.for_writing)
 				end

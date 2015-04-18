@@ -111,10 +111,12 @@ module Build
 			end
 			
 			def enter(task)
+				#puts "--> #{task.node.process}"
 				@tasks[task.node] = task
 			end
 			
 			def exit(task)
+				#puts "<-- #{task.node.process}"
 				@dirty.delete(task.node)
 				
 				# Fail outputs if the node failed:

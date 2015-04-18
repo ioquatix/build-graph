@@ -48,6 +48,10 @@ module Build
 				[@inputs, @outputs, @process].hash
 			end
 			
+			def inspect
+				"<#{self.class.name} #{@inputs.inspect} => #{@outputs.inspect} by #{@process.inspect}>"
+			end
+			
 			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, &block)
 				self.new(inputs, outputs, block)
 			end
