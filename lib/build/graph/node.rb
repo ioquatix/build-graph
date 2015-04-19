@@ -40,17 +40,20 @@ module Build
 			attr :outputs
 			attr :process
 			
-			def inherits_outputs?
+			# Nodes that inherit outputs are special in the sense that outputs are not available until all child nodes have been evaluated.
+			def inherit_outputs?
 				@outputs == :inherit
 			end
 			
+			# This computes the most recent modified time for all inputs.
 			def modified_time
 				modified_time = @inputs.map{|path| path.modified_time}.max
 			end
 			
+			# This is a canonical dirty function. All outputs must exist and must be newer than all inputs. This function is not efficient, in the sense that it must query all files on disk for last modified time.
 			def dirty?
-				if inherits_outputs?
-					true
+				if inherit_outputs?
+					return true
 				else
 					# Dirty if any outputs don't exist:
 					return true if @outputs.any?{|path| !path.exist?}

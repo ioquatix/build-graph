@@ -43,6 +43,8 @@ module Build
 				# Failed output paths:
 				@failed_tasks = []
 				@failed_outputs = Set.new
+				
+				@monitor = Files::Monitor.new
 			end
 			
 			attr :tasks # {Node => Task}
@@ -56,6 +58,8 @@ module Build
 			attr :dirty
 			
 			attr :parents
+			
+			attr :monitor
 			
 			def update(nodes)
 				Array(nodes).each do |node|
@@ -139,11 +143,19 @@ module Build
 				if parents = @parents.delete(task.node)
 					parents.each{|edge| edge.traverse(task)}
 				end
+				
+				@monitor.add(task)
+			end
+			
+			def delete(node)
+				if task = @tasks.delete(node)
+					@monitor.delete(task)
+				end
 			end
 			
 			def clear_failed
 				@failed_tasks.each do |task|
-					@tasks.delete(task.node)
+					self.delete(task.node)
 				end if @failed_tasks
 				
 				@failed_tasks = []

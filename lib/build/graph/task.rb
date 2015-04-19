@@ -100,6 +100,20 @@ module Build
 				@state == :failed
 			end
 			
+			# Returns true if the outputs of the task are out of date w.r.t. the inputs.
+			# Currently, does not take into account if the input is a glob and files have been added.
+			def dirty?
+				@outputs.dirty?(@inputs)
+			end
+			
+			def changed!
+				@walker.delete(@node)
+			end
+			
+			def directories
+				@inputs.roots + @outputs.roots
+			end
+			
 			def inspect
 				"<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
 			end
@@ -107,16 +121,19 @@ module Build
 		protected
 			def update_inputs_and_outputs
 				# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.
-				@inputs = @node.inputs.to_paths
+				@inputs = Files::State.new(@node.inputs)
 				
-				if @node.outputs != :inherit
-					@outputs = @node.outputs.to_paths
+				unless @node.inherit_outputs?
+					@outputs = Files::State.new(@node.outputs)
 				end
 			end
 			
 			def update_outputs
-				if @node.outputs == :inherit
-					@outputs = @children.collect(&:outputs).inject(&:+)
+				if @node.inherit_outputs?
+					@outputs = Files::State.new(@children.collect(&:outputs).inject(Files::Paths::NONE, &:+))
+				else
+					# After the task has finished, we update the output states:
+					@outputs.update!
 				end
 			end
 			

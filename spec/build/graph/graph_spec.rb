@@ -23,7 +23,7 @@ require 'build/graph/walker'
 require 'build/makefile'
 
 require 'process/group'
-
+require 'pry'
 require 'fileutils'
 
 module Build::Graph::GraphSpec
@@ -67,19 +67,14 @@ module Build::Graph::GraphSpec
 			end
 		end
 		
-		def dirty?
-			state = ::Build::Files::IOState.new(inputs, outputs)
-			
-			state.update!
-			
-			return state.dirty?
-		end
-		
+		# This function is called to finish the invocation of the task within the graph.
+		# There are two possible ways this function can generally proceed.
+		# 1/ The node this task is running for is clean, and thus no actual processing needs to take place, but children should probably be executed.
+		# 2/ The node this task is running for is dirty, and the execution of commands should work as expected.
 		def update(group = nil)
-			if @node.inherits_outputs? or self.dirty?
-				@group = group
-				@node.evaluate(self)
-			end
+			@group = group if @node.dirty?
+			
+			@node.evaluate(self)
 		end
 	end
 	
@@ -108,22 +103,26 @@ module Build::Graph::GraphSpec
 			end
 			
 			walker.update(top)
+			group.wait
 			
-			mtime = listing_output.first.mtime
-			
-			# Ensure the mtime will change even if the granularity of the filesystem is 1 second:
-			sleep(1)
+			first_modified_time = listing_output.first.modified_time
 			
 			walker.update(top)
+			group.wait
 			
 			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
-			expect(listing_output.first.mtime).to be == mtime
+			second_modified_time = listing_output.first.modified_time
+			
+			# The granularity of mtime on some systems is a bit weird:
+			expect(second_modified_time.to_f).to be_within(0.001).of(first_modified_time.to_f)
 			
 			FileUtils.rm_f listing_output.to_a
+			walker.monitor.update(listing_output.roots)
 			
 			walker.update(top)
+			group.wait
 			
-			expect(listing_output.first.mtime).to be > mtime
+			expect(listing_output.first.mtime).to be > first_modified_time
 			
 			FileUtils.rm_f listing_output.to_a
 		end
