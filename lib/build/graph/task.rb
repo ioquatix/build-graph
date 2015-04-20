@@ -128,9 +128,13 @@ module Build
 				end
 			end
 			
+			def children_outputs
+				@children.collect(&:outputs).inject(Files::Paths::NONE, &:+)
+			end
+			
 			def update_outputs
 				if @node.inherit_outputs?
-					@outputs = Files::State.new(@children.collect(&:outputs).inject(Files::Paths::NONE, &:+))
+					@outputs = Files::State.new(self.children_outputs)
 				else
 					# After the task has finished, we update the output states:
 					@outputs.update!

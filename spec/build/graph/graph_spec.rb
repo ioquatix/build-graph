@@ -42,9 +42,9 @@ module Build::Graph::GraphSpec
 	end
 	
 	class ProcessTask < Task
-		def process(inputs, outputs, &block)
+		def process(inputs, outputs = :inherit, &block)
 			inputs = Build::Files::List.coerce(inputs)
-			outputs = Build::Files::List.coerce(outputs)
+			outputs = Build::Files::List.coerce(outputs) unless outputs.kind_of? Symbol
 			
 			node = ProcessNode.new(inputs, outputs, block)
 			
@@ -84,7 +84,6 @@ module Build::Graph::GraphSpec
 			
 			FileUtils.rm_f listing_output.to_a
 			
-			node = nil
 			group = Process::Group.new
 			
 			walker = Walker.new do |walker, node|
@@ -124,6 +123,62 @@ module Build::Graph::GraphSpec
 			expect(listing_output.first.mtime).to be > first_modified_time
 			
 			FileUtils.rm_f listing_output.to_a
+		end
+		
+		it "should compile program and respond to changes in source code" do
+			program_root = Path.join(__dir__, "program")
+			code_glob = Glob.new(program_root, "*.cpp")
+			program_path = Path.join(program_root, "dictionary-sort")
+			
+			group = Process::Group.new
+			
+			walker = Walker.new do |walker, node|
+				task = ProcessTask.new(walker, node)
+				
+				task.visit do
+					task.update(group)
+				end
+			end
+			
+			# FileUtils.touch(code_glob.first)
+			
+			top = ProcessNode.top do
+				process code_glob, program_path do
+					object_files = inputs.with(extension: ".o") do |input_path, output_path|
+						depfile_path = input_path + ".d"
+						
+						dependencies = Paths.new(input_path)
+						
+						if File.exist? depfile_path
+							depfile = Build::Makefile.load_file(depfile_path)
+							
+							dependencies = depfile[output_path] || dependencies
+						end
+						
+						process dependencies, output_path do
+							run("clang++", "-MMD", "-O3",
+								"-o", output_path.shortest_path(input_path.root),
+								"-c", input_path.relative_path, "-std=c++11",
+								chdir: input_path.root
+							)
+						end
+					end
+					
+					process object_files, program_path do
+						run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm", "-pthread")
+					end
+				end
+				
+				process program_path do
+					run("./" + program_path.relative_path, chdir: program_path.root)
+				end
+			end
+			
+			walker.update(top)
+			group.wait
+			
+			expect(program_path).to be_exist
+			expect(code_glob.first.mtime).to be <= program_path.mtime
 		end
 	end
 end
