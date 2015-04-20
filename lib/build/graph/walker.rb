@@ -36,7 +36,6 @@ module Build
 				@update = block
 				
 				@outputs = {}
-				@dirty = Set.new
 				
 				@parents = {}
 				
@@ -82,8 +81,13 @@ module Build
 			end
 			
 			def wait_on_paths(paths)
+				# If there are no paths, we are done:
+				return true if paths.count == 0
+				
 				# We create a new directed hyper-graph edge which waits for all paths to be ready (or failed):
 				edge = Edge.new
+				
+				paths = paths.collect(&:to_s)
 				
 				paths.each do |path|
 					# Is there a task generating this output?
@@ -96,32 +100,49 @@ module Build
 				
 				failed = paths.any?{|path| @failed_outputs.include? path}
 				
-				edge.wait || failed
+				return edge.wait && !failed
 			end
-		
-			def wait_for_tasks(children)
+			
+			# A parent task only completes once all it's children are complete.
+			def wait_for_children(parent, children)
+				# Consider only incomplete/failed children:
+				children = children.select{|child| !child.complete?}
+				
+				# If there are no children like this, then done:
+				return true if children.size == 0
+				
+				# Otherwise, construct an edge to track state changes:
 				edge = Edge.new
 				
 				children.each do |child|
-					if @dirty.include?(child.node)
+					if child.failed?
+						edge.skip!(child)
+					else
+						# We are waiting for this child to finish:
 						edge.increment!
-					
+						
 						@parents[child.node] ||= []
 						@parents[child.node] << edge
 					end
 				end
-			
-				edge.wait
+				
+				return edge.wait
 			end
 			
 			def enter(task)
-				#puts "--> #{task.node.process}"
+				puts "--> #{task.node.process}"
 				@tasks[task.node] = task
+				
+				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is not a problem in practice.
+				if outputs = task.outputs
+					outputs.each do |path|
+						@outputs[path.to_s] = []
+					end
+				end
 			end
 			
 			def exit(task)
-				#puts "<-- #{task.node.process}"
-				@dirty.delete(task.node)
+				puts "<-- #{task.node.process}"
 				
 				# Fail outputs if the node failed:
 				if task.failed?
@@ -134,12 +155,14 @@ module Build
 				
 				# Clean the node's outputs:
 				task.outputs.each do |path|
+					path = path.to_s
+					
 					if edges = @outputs.delete(path)
 						edges.each{|edge| edge.traverse(task)}
 					end
 				end
 				
-				# Trigger the parent nodes:
+				# Notify the parent nodes that the child is done:
 				if parents = @parents.delete(task.node)
 					parents.each{|edge| edge.traverse(task)}
 				end

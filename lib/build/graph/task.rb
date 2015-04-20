@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+require 'pry'
+
 module Build
 	module Graph
 		class Task
@@ -53,12 +55,12 @@ module Build
 			
 			# Derived task should override this function to provide appropriate behaviour.
 			def visit
+				update_inputs_and_outputs
+				
 				# Inforn the walker a new task is being generated for this node:
 				@walker.enter(self)
 				
 				@fiber = Fiber.new do
-					update_inputs_and_outputs
-					
 					# If all inputs were good, we can update the node.
 					if wait_for_inputs?
 						begin
@@ -74,9 +76,9 @@ module Build
 						fail!(:children)
 					end
 					
-					@state ||= :complete
-					
 					update_outputs
+					
+					@state ||= :complete
 					
 					@walker.exit(self)
 				end
@@ -100,6 +102,10 @@ module Build
 				@state == :failed
 			end
 			
+			def complete?
+				@state == :complete
+			end
+			
 			# Returns true if the outputs of the task are out of date w.r.t. the inputs.
 			# Currently, does not take into account if the input is a glob and files have been added.
 			def dirty?
@@ -117,6 +123,9 @@ module Build
 			def inspect
 				"<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
 			end
+			
+			attr :error
+			attr :state
 			
 		protected
 			def update_inputs_and_outputs
@@ -149,14 +158,12 @@ module Build
 			# Returns false if any input failed.
 			def wait_for_inputs?
 				# Wait on any inputs, returns whether any inputs failed:
-				!@walker.wait_on_paths(@inputs)
+				@walker.wait_on_paths(@inputs)
 			end
 			
 			# Returns false if any child failed.
 			def wait_for_children?
-				@walker.wait_for_tasks(@children)
-				
-				!@children.any?{|child| child.failed?}
+				@walker.wait_for_children(self, @children)
 			end
 		end
 	end

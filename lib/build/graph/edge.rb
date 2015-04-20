@@ -40,19 +40,23 @@ module Build
 			attr :fiber
 			attr :count
 			
-			# Wait until all inputs to the edge have been traversed.
+			# Wait until all inputs to the edge have been traversed. Returns false if failed?
 			def wait
 				if @count > 0
 					Fiber.yield
 				end
-			
-				failed?
+				
+				succeeded?
 			end
 			
 			attr :failed
 			
 			def failed?
 				@failed.size != 0
+			end
+			
+			def succeeded?
+				@failed.size == 0
 			end
 			
 			# Traverse the edge, mark the edge as failed if the source was also failed.
@@ -66,6 +70,12 @@ module Build
 				
 				if @count == 0
 					@fiber.resume
+				end
+			end
+			
+			def skip!(task)
+				if task.failed?
+					@failed << task
 				end
 			end
 			

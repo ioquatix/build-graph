@@ -140,7 +140,7 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			# FileUtils.touch(code_glob.first)
+			#FileUtils.touch(code_glob.first)
 			
 			top = ProcessNode.top do
 				process code_glob, program_path do
@@ -178,7 +178,7 @@ module Build::Graph::GraphSpec
 			group.wait
 			
 			expect(program_path).to be_exist
-			expect(code_glob.first.mtime).to be <= program_path.mtime
+			expect(code_glob.first.modified_time).to be <= program_path.modified_time
 		end
 	end
 end
