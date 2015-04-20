@@ -23,7 +23,6 @@ require 'build/graph/walker'
 require 'build/makefile'
 
 require 'process/group'
-require 'pry'
 require 'fileutils'
 
 module Build::Graph::GraphSpec
