@@ -31,6 +31,7 @@ module Build
 				
 				# The number of inputs we are waiting for:
 				@count = count
+				@vertices = 0
 				
 				@failed = []
 			end
@@ -74,6 +75,8 @@ module Build
 			end
 			
 			def skip!(task)
+				@vertices += 1
+				
 				if task.failed?
 					@failed << task
 				end
@@ -81,6 +84,7 @@ module Build
 			
 			# Increase the number of traversals we are waiting for.
 			def increment!
+				@vertices += 1
 				@count += 1
 			end
 		end
