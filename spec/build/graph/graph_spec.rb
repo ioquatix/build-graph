@@ -117,10 +117,13 @@ module Build::Graph::GraphSpec
 			FileUtils.rm_f listing_output.to_a
 			walker.monitor.update(listing_output.roots)
 			
+			# The granularity of modification times isn't that great, so we use >= below.
+			# sleep 1
+			
 			walker.update(top)
 			group.wait
 			
-			expect(listing_output.first.mtime).to be > first_modified_time
+			expect(listing_output.first.modified_time).to be >= first_modified_time
 			
 			FileUtils.rm_f listing_output.to_a
 		end
