@@ -130,7 +130,7 @@ module Build
 			end
 			
 			def enter(task)
-				puts "--> #{task.node.process}"
+				# puts "--> #{task.node.process}"
 				@tasks[task.node] = task
 				
 				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is not a problem in practice.
@@ -142,7 +142,7 @@ module Build
 			end
 			
 			def exit(task)
-				puts "<-- #{task.node.process}"
+				# puts "<-- #{task.node.process}"
 				
 				# Fail outputs if the node failed:
 				if task.failed?
