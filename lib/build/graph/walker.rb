@@ -149,7 +149,7 @@ module Build
 					@failed_tasks << task
 					
 					if task.outputs
-						@failed_outputs += task.outputs
+						@failed_outputs += task.outputs.collect{|path| path.to_s}
 					end
 				end
 				
