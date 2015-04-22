@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 require 'set'
+require 'logger'
 
 require_relative 'task'
 require_relative 'node'
@@ -29,7 +30,7 @@ module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
-			def initialize(&block)
+			def initialize(logger: nil, &block)
 				# Node -> Task mapping.
 				@tasks = {}
 				
@@ -43,7 +44,8 @@ module Build
 				@failed_tasks = []
 				@failed_outputs = Set.new
 				
-				@monitor = Files::Monitor.new
+				@logger = logger || Logger.new(nil)
+				@monitor = Files::Monitor.new(logger: @logger)
 			end
 			
 			attr :tasks # {Node => Task}
@@ -62,13 +64,15 @@ module Build
 			
 			def update(nodes)
 				Array(nodes).each do |node|
-					@update.call(self, node)
+					self.call(node)
 				end
 			end
 			
 			def call(node)
 				# We try to fetch the task if it has already been invoked, otherwise we create a new task.
 				@tasks.fetch(node) do
+					@logger.debug{"Update: #{node}"}
+					
 					@update.call(self, node)
 					
 					# This should now be defined:
@@ -130,7 +134,8 @@ module Build
 			end
 			
 			def enter(task)
-				# puts "--> #{task.node.process}"
+				@logger.debug{"--> #{task.node.process}"}
+				
 				@tasks[task.node] = task
 				
 				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is not a problem in practice.
@@ -142,7 +147,7 @@ module Build
 			end
 			
 			def exit(task)
-				# puts "<-- #{task.node.process}"
+				@logger.debug{"<-- #{task.node.process}"}
 				
 				# Fail outputs if the node failed:
 				if task.failed?
@@ -171,6 +176,8 @@ module Build
 			end
 			
 			def delete(node)
+				@logger.debug{">-< #{node.process}"}
+
 				if task = @tasks.delete(node)
 					@monitor.delete(task)
 				end
@@ -183,6 +190,14 @@ module Build
 				
 				@failed_tasks = []
 				@failed_outputs = Set.new
+			end
+			
+			def run(**options)
+				yield
+				
+				monitor.run(**options) do
+					yield
+				end
 			end
 		end
 	end

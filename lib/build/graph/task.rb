@@ -111,11 +111,11 @@ module Build
 			end
 			
 			def changed!
-				@walker.delete(@node)
+				@walker.delete(@node) if (@inputs.update! or @outputs.update!)
 			end
 			
 			def directories
-				@inputs.roots + @outputs.roots
+				(@inputs.roots + @outputs.roots).collect{|path| path.to_s}
 			end
 			
 			def inspect

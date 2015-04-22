@@ -183,5 +183,57 @@ module Build::Graph::GraphSpec
 			expect(program_path).to be_exist
 			expect(code_glob.first.modified_time).to be <= program_path.modified_time
 		end
+		
+		it "should copy files incrementally" do
+			program_root = Path.join(__dir__, "program")
+			files = Glob.new(program_root, "*.cpp")
+			destination = Path.new(__dir__) + "tmp"
+			
+			group = Process::Group.new
+			
+			walker = Walker.new(logger: Logger.new($stderr)) do |walker, node|
+				task = ProcessTask.new(walker, node)
+				
+				task.visit do
+					task.update(group)
+				end
+			end
+			
+			#FileUtils.touch(code_glob.first)
+			
+			top = ProcessNode.top files do
+				inputs.each do |source_path|
+					destination_path = source_path.rebase(destination)
+					
+					process source_path, destination_path do
+						run("install", "-D", inputs.first, outputs.first)
+					end
+				end
+			end
+			
+			trashed_files = false
+			
+			thread = Thread.new do
+				sleep 0.1
+				
+				destination.glob("*.cpp").each{|path| path.delete}
+				
+				trashed_files = true
+			end
+			
+			walker.run do
+				walker.update(top)
+				group.wait
+				
+				break if trashed_files
+			end
+			
+			thread.join
+			
+			expect(destination).to be_exist
+			expect(destination.glob("*.cpp").count).to be == 2
+			
+			destination.delete
+		end
 	end
 end
