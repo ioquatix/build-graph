@@ -66,6 +66,14 @@ module Build::Graph::GraphSpec
 			end
 		end
 		
+		def fs
+			if wet?
+				FileUtils::Verbose
+			else
+				FileUtils::Verbose::Dry
+			end
+		end
+		
 		# This function is called to finish the invocation of the task within the graph.
 		# There are two possible ways this function can generally proceed.
 		# 1/ The node this task is running for is clean, and thus no actual processing needs to take place, but children should probably be executed.
@@ -202,11 +210,13 @@ module Build::Graph::GraphSpec
 			#FileUtils.touch(code_glob.first)
 			
 			top = ProcessNode.top files do
+				fs.mkpath destination
+				
 				inputs.each do |source_path|
 					destination_path = source_path.rebase(destination)
 					
 					process source_path, destination_path do
-						run("install", "-D", inputs.first, outputs.first)
+						fs.install inputs.first, outputs.first
 					end
 				end
 			end
