@@ -30,6 +30,16 @@ module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
+			def self.for(task_class, *args, **options)
+				self.new(**options) do |walker, node|
+					task = task_class.new(walker, node, *args)
+					
+					task.visit do
+						task.update
+					end
+				end
+			end
+			
 			def initialize(logger: nil, &block)
 				# Node -> Task mapping.
 				@tasks = {}

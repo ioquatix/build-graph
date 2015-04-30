@@ -19,71 +19,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'build/graph/walker'
-require 'build/makefile'
-
-require 'process/group'
-require 'fileutils'
+require_relative 'process_graph'
 
 module Build::Graph::GraphSpec
-	include Build::Graph
-	include Build::Files
-	
-	class ProcessNode < Node
-		def initialize(inputs, outputs, block)
-			super(inputs, outputs, block.source_location)
-			
-			@block = block
-		end
-		
-		def evaluate(context)
-			context.instance_eval(&@block)
-		end
-	end
-	
-	class ProcessTask < Task
-		def process(inputs, outputs = :inherit, &block)
-			inputs = Build::Files::List.coerce(inputs)
-			outputs = Build::Files::List.coerce(outputs) unless outputs.kind_of? Symbol
-			
-			node = ProcessNode.new(inputs, outputs, block)
-			
-			self.invoke(node)
-		end
-		
-		def wet?
-			@group != nil
-		end
-		
-		def run(*arguments)
-			if wet?
-				puts "\t[run] #{arguments.join(' ')}"
-				status = @group.spawn(*arguments)
-				
-				if status != 0
-					raise CommandError.new(status)
-				end
-			end
-		end
-		
-		def fs
-			if wet?
-				FileUtils::Verbose
-			else
-				FileUtils::Verbose::Dry
-			end
-		end
-		
-		# This function is called to finish the invocation of the task within the graph.
-		# There are two possible ways this function can generally proceed.
-		# 1/ The node this task is running for is clean, and thus no actual processing needs to take place, but children should probably be executed.
-		# 2/ The node this task is running for is dirty, and the execution of commands should work as expected.
-		def update(group = nil)
-			@group = group if @node.dirty?
-			
-			@node.evaluate(self)
-		end
-	end
+	include ProcessGraph
 	
 	describe Build::Graph do
 		it "shouldn't update mtime" do
@@ -93,14 +32,7 @@ module Build::Graph::GraphSpec
 			FileUtils.rm_f listing_output.to_a
 			
 			group = Process::Group.new
-			
-			walker = Walker.new do |walker, node|
-				task = ProcessTask.new(walker, node)
-				
-				task.visit do
-					task.update(group)
-				end
-			end
+			walker = Walker.for(ProcessTask, group)
 			
 			top = ProcessNode.top do
 				process test_glob, listing_output do
@@ -142,14 +74,7 @@ module Build::Graph::GraphSpec
 			program_path = Path.join(program_root, "dictionary-sort")
 			
 			group = Process::Group.new
-			
-			walker = Walker.new do |walker, node|
-				task = ProcessTask.new(walker, node)
-				
-				task.visit do
-					task.update(group)
-				end
-			end
+			walker = Walker.for(ProcessTask, group)
 			
 			#FileUtils.touch(code_glob.first)
 			
@@ -198,14 +123,7 @@ module Build::Graph::GraphSpec
 			destination = Path.new(__dir__) + "tmp"
 			
 			group = Process::Group.new
-			
-			walker = Walker.new(logger: Logger.new($stderr)) do |walker, node|
-				task = ProcessTask.new(walker, node)
-				
-				task.visit do
-					task.update(group)
-				end
-			end
+			walker = Walker.for(ProcessTask, group)
 			
 			#FileUtils.touch(code_glob.first)
 			
@@ -244,6 +162,11 @@ module Build::Graph::GraphSpec
 			expect(destination.glob("*.cpp").count).to be == 2
 			
 			destination.delete
+		end
+		
+		it "should invalidate multiple tasks" do
+			# Chain output of one task into another. If the original input is modified, all tasks in the chain should be destroyed.
+			# In theory, a fixed point should be computed when the first input is modified, but using the file monitor, it should probably be expected to cascade changes through the graph as the outputs are rewritten.
 		end
 	end
 end
