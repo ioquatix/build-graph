@@ -12,7 +12,7 @@ program_path = Path.join(program_root, "dictionary-sort")
 
 group = Process::Group.new
 logger = Logger.new($stderr)
-walker = Walker.for(ProcessTask, group, logger: logger)
+walker = Walker.for(ProcessTask, group)
 
 top = ProcessNode.top code_glob do
 	process code_glob, program_path do

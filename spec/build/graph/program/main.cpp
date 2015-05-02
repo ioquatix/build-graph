@@ -118,8 +118,6 @@ static void test_dictionary ()
     
 	std::cerr << "Checksum: " << checksum << " ? " << (checksum == 479465310674138860) << std::endl;
 	std::cerr << "Total Time: " << elapsed_time << std::endl;
-
-	std::cerr << "Finished." << std::endl;
 }
 
 int main (int argc, const char * argv[])
