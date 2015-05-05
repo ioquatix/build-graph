@@ -9,4 +9,6 @@ group :test do
 	
 	gem 'rb-fsevent'
 	gem 'rb-inotify'
+	
+	gem 'graphviz'
 end

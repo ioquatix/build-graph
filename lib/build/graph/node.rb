@@ -80,8 +80,8 @@ module Build
 				"<#{self.class.name} #{@inputs.inspect} => #{@outputs.inspect} by #{@process.inspect}>"
 			end
 			
-			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, &block)
-				self.new(inputs, outputs, block)
+			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, **options, &block)
+				self.new(inputs, outputs, block, **options)
 			end
 		end
 	end

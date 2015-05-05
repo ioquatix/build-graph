@@ -8,8 +8,14 @@ module ProcessGraph
 	include Build::Files
 
 	class ProcessNode < Node
-		def initialize(inputs, outputs, block)
+		def initialize(inputs, outputs, block, title: nil)
 			super(inputs, outputs, block.source_location)
+			
+			if title
+				@title = title
+			else
+				@title = self.process
+			end
 			
 			@block = block
 		end
@@ -17,6 +23,8 @@ module ProcessGraph
 		def evaluate(context)
 			context.instance_eval(&@block)
 		end
+		
+		attr :title
 	end
 
 	class ProcessTask < Task
@@ -26,11 +34,11 @@ module ProcessGraph
 			@group = group
 		end
 		
-		def process(inputs, outputs = :inherit, &block)
+		def process(inputs, outputs = :inherit, **options, &block)
 			inputs = Build::Files::List.coerce(inputs)
 			outputs = Build::Files::List.coerce(outputs) unless outputs.kind_of? Symbol
 			
-			node = ProcessNode.new(inputs, outputs, block)
+			node = ProcessNode.new(inputs, outputs, block, **options)
 			
 			self.invoke(node)
 		end
