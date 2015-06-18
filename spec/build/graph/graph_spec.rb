@@ -163,10 +163,5 @@ module Build::Graph::GraphSpec
 			
 			destination.delete
 		end
-		
-		it "should invalidate multiple tasks" do
-			# Chain output of one task into another. If the original input is modified, all tasks in the chain should be destroyed.
-			# In theory, a fixed point should be computed when the first input is modified, but using the file monitor, it should probably be expected to cascade changes through the graph as the outputs are rewritten.
-		end
 	end
 end
