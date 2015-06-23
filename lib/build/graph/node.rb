@@ -54,15 +54,21 @@ module Build
 			def dirty?
 				if inherit_outputs?
 					return true
+				elsif @inputs.count == 0
+					# If there are no inputs we are always dirty:
+					return false
 				else
 					# Dirty if any outputs don't exist:
 					return true if @outputs.any?{|path| !path.exist?}
 					
 					# Dirty if input modified after any output:
-					input_modified_time = self.modified_time
-					
-					# Outputs should always be more recent than their inputs:
-					return true if @outputs.any?{|output_path| output_path.modified_time < input_modified_time}
+					if input_modified_time = self.modified_time
+						# Outputs should always be more recent than their inputs:
+						return true if @outputs.any?{|output_path| output_path.modified_time < input_modified_time}
+					else
+						# None of the inputs exist:
+						true
+					end
 				end
 				
 				return false
