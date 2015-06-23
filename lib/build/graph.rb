@@ -18,7 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'graph/controller'
+require_relative 'graph/error'
+require_relative 'graph/node'
+require_relative 'graph/walker'
+require_relative 'graph/edge'
 
 module Build
 	module Graph
