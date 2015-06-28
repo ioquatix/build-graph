@@ -21,7 +21,7 @@
 
 require 'build/graph/node'
 require 'build/files/glob'
-require 'build/files/path/filesystem'
+require 'build/files/system'
 
 module Build::Graph::NodeSpec
 	include Build::Graph
