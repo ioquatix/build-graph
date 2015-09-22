@@ -1,5 +1,8 @@
 source 'https://rubygems.org'
 
+# Use local code for testing.
+# gem "build-files", path: "../build-files"
+
 # Specify your gem's dependencies in build.gemspec
 gemspec
 
