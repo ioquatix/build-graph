@@ -139,17 +139,24 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
+			filesystem = Mutex.new
+			triggered = 0
 			trashed_files = false
 			
 			thread = Thread.new do
-				sleep 0.1
 				
-				destination.glob("*.cpp").each{|path| path.delete}
-				
-				trashed_files = true
+				while triggered == 0 or trashed_files == false
+					sleep 0.1 if trashed_files
+					
+					destination.glob("*.cpp").each{|path| path.delete}
+					
+					trashed_files = true
+				end
 			end
 			
 			walker.run do
+				triggered += 1
+				
 				walker.update(top)
 				group.wait
 				
