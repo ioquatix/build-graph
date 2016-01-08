@@ -119,7 +119,7 @@ module Build
 			end
 			
 			def inspect
-				"<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
+				"#<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
 			end
 			
 			attr :error
