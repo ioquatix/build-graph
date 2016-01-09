@@ -139,12 +139,10 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			filesystem = Mutex.new
 			triggered = 0
 			trashed_files = false
 			
 			thread = Thread.new do
-				
 				while triggered == 0 or trashed_files == false
 					sleep 0.1 if trashed_files
 					
