@@ -47,7 +47,7 @@ module Build
 			
 			# This computes the most recent modified time for all inputs.
 			def modified_time
-				modified_time = @inputs.map{|path| path.modified_time}.max
+				@inputs.map{|path| path.modified_time}.max
 			end
 			
 			# This is a canonical dirty function. All outputs must exist and must be newer than all inputs. This function is not efficient, in the sense that it must query all files on disk for last modified time.

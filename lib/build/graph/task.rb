@@ -28,7 +28,6 @@ module Build
 				
 				@node = node
 				
-				# If the execution of the node fails, this is where we save the error:
 				@error = nil
 				
 				@children = []
@@ -43,6 +42,9 @@ module Build
 			
 			attr :children
 			attr :state
+			
+			# The error, if the execution of the node fails.
+			attr :error
 			
 			attr :walker
 			
@@ -121,9 +123,6 @@ module Build
 			def inspect
 				"#<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
 			end
-			
-			attr :error
-			attr :state
 			
 		protected
 			def update_inputs_and_outputs

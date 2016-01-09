@@ -50,8 +50,6 @@ module Build
 				succeeded?
 			end
 			
-			attr :failed
-			
 			def failed?
 				@failed.size != 0
 			end
