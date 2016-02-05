@@ -155,7 +155,7 @@ module Build
 			# Returns false if any input failed.
 			def wait_for_inputs?
 				# Wait on any inputs, returns whether any inputs failed:
-				@walker.wait_on_paths(@inputs)
+				@walker.wait_on_paths(self, @inputs)
 			end
 			
 			# Returns false if any child failed.
