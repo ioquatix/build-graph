@@ -1,4 +1,5 @@
-# Copyright, 2014, by Samuel G. D. Williams. <http://www.codeotaku.com>
+#!/usr/bin/env rspec
+# Copyright, 2012, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,12 +19,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'graph/task'
-require_relative 'graph/node'
-require_relative 'graph/walker'
-require_relative 'graph/edge'
+require 'build/graph/call_stack'
 
-module Build
-	module Graph
+module Build::Graph::CallStackSpec
+	describe Build::Graph::CallStack do
+		it "should merge state" do
+			outer_state = nil
+			inner_state = nil
+			
+			subject.with(x: 10) do
+				outer_state = subject.last
+				
+				subject.with(x: 20, y: 30) do
+					inner_state = subject.last
+				end
+			end
+			
+			expect(outer_state).to include(:x)
+			expect(inner_state).to include(:x, :y)
+		end
 	end
 end

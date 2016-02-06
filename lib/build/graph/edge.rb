@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'error'
-
 require 'fiber'
 
 module Build
@@ -72,6 +70,7 @@ module Build
 				end
 			end
 			
+			# This is called in the case that a parent fails to complete because a child task has failed.
 			def skip!(task)
 				@vertices += 1
 				

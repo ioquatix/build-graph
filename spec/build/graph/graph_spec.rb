@@ -25,13 +25,18 @@ module Build::Graph::GraphSpec
 	include ProcessGraph
 	
 	describe Build::Graph do
+		let(:group) {Process::Group.new}
+		
+		after(:each) do
+			group.wait
+		end
+		
 		it "shouldn't update mtime" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
 			
 			FileUtils.rm_f listing_output.to_a
 			
-			group = Process::Group.new
 			walker = Walker.for(ProcessTask, group)
 			
 			top = ProcessNode.top do
@@ -73,7 +78,6 @@ module Build::Graph::GraphSpec
 			code_glob = Glob.new(program_root, "*.cpp")
 			program_path = Path.join(program_root, "dictionary-sort")
 			
-			group = Process::Group.new
 			walker = Walker.for(ProcessTask, group)
 			
 			#FileUtils.touch(code_glob.first)
@@ -122,7 +126,6 @@ module Build::Graph::GraphSpec
 			files = Glob.new(program_root, "*.cpp")
 			destination = Path.new(__dir__) + "tmp"
 			
-			group = Process::Group.new
 			walker = Walker.for(ProcessTask, group)
 			
 			#FileUtils.touch(code_glob.first)

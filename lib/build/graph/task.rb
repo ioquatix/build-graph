@@ -20,6 +20,9 @@
 
 module Build
 	module Graph
+		class TransientError < StandardError
+		end
+		
 		class Task
 			def initialize(walker, node)
 				@walker = walker

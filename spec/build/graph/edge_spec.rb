@@ -1,4 +1,6 @@
-# Copyright, 2014, by Samuel G. D. Williams. <http://www.codeotaku.com>
+#!/usr/bin/env rspec
+
+# Copyright, 2012, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,12 +20,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'graph/task'
-require_relative 'graph/node'
-require_relative 'graph/walker'
-require_relative 'graph/edge'
+require_relative 'process_graph'
 
-module Build
-	module Graph
+RSpec.describe Build::Graph::Edge do
+	let(:failed_task) {double(:failed? => true)}
+	
+	it "should fail if failed task is added" do
+		subject.traverse(failed_task)
+		
+		expect(subject.failed?).to be_truthy
+	end
+	
+	it "should fail if failed task is skipped" do
+		subject.skip!(failed_task)
+		
+		expect(subject.failed?).to be_truthy
 	end
 end

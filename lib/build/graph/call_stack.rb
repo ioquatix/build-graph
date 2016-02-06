@@ -20,19 +20,32 @@
 
 module Build
 	module Graph
-		class TransientError < StandardError
-		end
-	
-		class CommandFailure < TransientError
-			def initialize(command, status)
-				super "Command #{command.inspect} failed with exit status #{status}!"
-		
-				@command = command
-				@status = status
+		# A call stack contains frames to track state during nested invocations.
+		class CallStack
+			def initialize
+				# Saves state if supplied to #call, which is useful for top level state:
+				@frames = [{}.freeze]
 			end
-	
-			attr :command
-			attr :status
+			
+			# All stack frames which had state associated with them.
+			attr :frames
+			
+			# Yield with the given state, merged with any prior state.
+			def with(state)
+				if state and !state.empty?
+					@frames << @frames.last.merge(state).freeze
+					yield
+					@frames.pop
+				else
+					yield
+				end
+			end
+			
+			# The current stack frame state.
+			def last
+				@frames.last
+			end
 		end
 	end
 end
+
