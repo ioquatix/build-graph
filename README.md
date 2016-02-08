@@ -10,19 +10,19 @@ Build::Graph is a framework for build systems, with specific functionality for d
 
 Add this line to your application's Gemfile:
 
-    gem 'build-graph'
+	gem 'build-graph'
 
 And then execute:
 
-    $ bundle
+	$ bundle
 
 Or install it yourself as:
 
-    $ gem install build-graph
+	$ gem install build-graph
 
 ## Usage
 
-A build graph is an abstract set of `[input, process, output]` nodes. A node executes it's proces within the context of a `Task` which represents a specific set of inputs and outputs and is managed within a `Walker` that walks over graph nodes, regenerating tasks where required. If inputs or outputs change (i.e. become dirty), the task is destroyed and regenerated.
+A build graph is an abstract set of `[input, process, output]` nodes. A node executes it's process within the context of a `Task` which represents a specific set of inputs and outputs and is managed within a `Walker` that walks over graph nodes, regenerating tasks where required. If inputs or outputs change (i.e. become dirty), the old task is nullified.
 
 A `Walker` is used to traverse the build graph once. As it walks over the graph it builds a set of `Edge` relationships between nodes and only traverses relationships which are complete `Walker#wait_on_paths`. Parent nodes also wait until all their children are complete `Walker#wait_on_nodes` It also keeps track of failures `Walker#failed?` and fails all dependencies of a node.
 
@@ -36,11 +36,35 @@ Outputs from a node should be all files that are generated directly by the proce
 
 ### Dirty Propagation
 
-A `Node` has a set of `#inputs` and `#outputs` but these are abstract. A `Task`, at the time of execution, captures it's inputs and outputs and these may be monitored for changes in real time. The simplest way to cause a task to regenerate is to simply remove it from the existing graph and it will be regenerated.
+A `Node` has a set of `#inputs` and `#outputs` but these are abstract. For example, `#outputs` could be `:inherit` which means that the node symbolically has all the outputs of all it's direct children. A `Task`, at the time of execution, captures it's inputs and outputs and these may be monitored for changes in real time.
 
 File changes are currently detected using `File::mtime` as this is generally a good trade off between efficiency and accuracy.
 
 When a task is marked as dirty, it also marks all it's outputs as being dirty, which in cause could mark other tasks as dirty. This is the mechanism for which dirtiness propagates through the graph. The walker should only have to traverse the graph once to build it completely. If multiple updates are required (i.e. buidling one part of the graph implicitly dirties another part of the graph), the specification of the graph is incomplete and this may lead to problems within the build graph.
+
+### Example Graph
+
+	target("Library/UnitTest", [] -> :inherit) do
+		library([UnitTest.cpp] -> UnitTest.a) do
+			compile([UnitTest.cpp] -> UnitTest.o)
+			link([UnitTest.o] -> libUnitTest.a)
+		end
+		
+		copy headers: [UnitTest.hpp]
+		
+		# Outputs become libUnitTest.a and UnitTest.hpp
+	end
+
+	target("Executable/UnitTest", [] -> :inherit) do
+		depends("Library/UnitTest")
+		
+		executable(main.cpp -> UnitTest) do
+			compile(main.cpp -> main.o)
+			link([main.o, libUnitTest.a] -> UnitTest)
+		end
+		
+		# Outputs become UnitTest
+	end
 
 ## Contributing
 
@@ -54,7 +78,7 @@ When a task is marked as dirty, it also marks all it's outputs as being dirty, w
 
 Released under the MIT license.
 
-Copyright, 2012, 2014, by [Samuel G. D. Williams](http://www.codeotaku.com/samuel-williams).
+Copyright, 2012, 2014, 2016, by [Samuel G. D. Williams](http://www.codeotaku.com/samuel-williams).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

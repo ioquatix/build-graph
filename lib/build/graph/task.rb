@@ -23,6 +23,18 @@ module Build
 		class TransientError < StandardError
 		end
 		
+		module ChildrenFailed
+			def self.to_s
+				"Children tasks failed!"
+			end
+		end
+		
+		module InputsFailed
+			def self.to_s
+				"Tasks generating inputs failed!"
+			end
+		end
+		
 		class Task
 			def initialize(walker, node)
 				@walker = walker
@@ -72,11 +84,11 @@ module Build
 							fail!(error)
 						end
 					else
-						fail!(:inputs)
+						fail!(InputsFailed)
 					end
 					
 					unless wait_for_children?
-						fail!(:children)
+						fail!(ChildrenFailed)
 					end
 					
 					update_outputs
@@ -151,6 +163,11 @@ module Build
 			end
 			
 			def fail!(error)
+				if logger = @walker.logger
+					logger.error("Task #{self} failed: #{error}")
+					logger.debug(error) if error.kind_of?(Exception)
+				end
+				
 				@error = error
 				@state = :failed
 			end

@@ -96,7 +96,7 @@ module Build
 						@update.call(self, node, @call_stack.last)
 						
 						# This should now be defined:
-						@tasks[node]
+						return @tasks[node]
 					end
 				end
 			end
@@ -131,20 +131,18 @@ module Build
 				
 				failed = paths.any?{|path| @failed_outputs.include? path}
 				
-				@logger.debug{"Waiting on paths: #{edge.count}"}
-				
 				return edge.wait && !failed
 			end
 			
 			# A parent task only completes once all it's children are complete.
 			def wait_for_children(parent, children)
-				@logger.debug{"Task #{parent} is waiting on #{children.count} children"}
-				
 				# Consider only incomplete/failed children:
 				children = children.select{|child| !child.complete?}
 				
 				# If there are no children like this, then done:
 				return true if children.size == 0
+				
+				@logger.debug{"Task #{parent} is waiting on #{children.count} children"}
 				
 				# Otherwise, construct an edge to track state changes:
 				edge = Edge.new
@@ -159,8 +157,6 @@ module Build
 						@parents[child.node] << edge
 					end
 				end
-				
-				@logger.debug{"Waiting on children: #{edge.count}"}
 				
 				return edge.wait
 			end
@@ -182,7 +178,7 @@ module Build
 			end
 			
 			def exit(task)
-				@logger.debug{"Walker exiting: #{task.node.process}"}
+				@logger.debug{"Walker exiting: #{task.node.process}, task #{task.failed? ? 'failed' : 'succeeded'}"}
 				
 				# Fail outputs if the node failed:
 				if task.failed?
@@ -197,7 +193,13 @@ module Build
 				task.outputs.each do |path|
 					path = path.to_s
 					
-					@logger.debug{"Trigging path available: #{path}"}
+					if logger.debug?
+						if task.failed?
+							@logger.debug "\tFile failed: #{path}"
+						else
+							@logger.debug "\tFile available: #{path}"
+						end
+					end
 					
 					if edges = @outputs.delete(path)
 						edges.each{|edge| edge.traverse(task)}
@@ -213,7 +215,7 @@ module Build
 			end
 			
 			def delete(node)
-				@logger.debug{">-< #{node.process}"}
+				@logger.debug{"Delete #{node}"}
 
 				if task = @tasks.delete(node)
 					@monitor.delete(task)
