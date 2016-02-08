@@ -131,13 +131,13 @@ module Build::Graph::GraphSpec
 			#FileUtils.touch(code_glob.first)
 			
 			top = ProcessNode.top files do
-				fs.mkpath destination
+				mkpath destination
 				
 				inputs.each do |source_path|
 					destination_path = source_path.rebase(destination)
 					
 					process source_path, destination_path do
-						fs.install inputs.first, outputs.first
+						install inputs.first, outputs.first
 					end
 				end
 			end
