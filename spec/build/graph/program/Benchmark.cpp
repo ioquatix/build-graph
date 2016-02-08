@@ -18,16 +18,16 @@ namespace Benchmark
 		gettimeofday (&t, (struct timezone*)0);
 		return ((TimeT)t.tv_sec) + ((TimeT)t.tv_usec / 1000000.0);
 	}
-    
+
 	WallTime::WallTime () {
 		this->reset();
 	}
-    
+
 	void WallTime::reset () {
 		this->_last = system_time();
 		this->_total = 0.0;
 	}
-    
+
 	TimeT WallTime::total () const {
 		TimeT current = system_time();
 		this->_total += current - this->_last;
