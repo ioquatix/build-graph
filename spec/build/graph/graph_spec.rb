@@ -167,6 +167,7 @@ module Build::Graph::GraphSpec
 			thread.join
 			
 			expect(destination).to be_exist
+			# This line failed, may still be a race condition:
 			expect(destination.glob("*.cpp").count).to be == 2
 			
 			destination.delete
