@@ -1,14 +1,11 @@
 language: ruby
-compiler: clang
-before_install:
-  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
-  - sudo apt-get -qq update
-  - sudo apt-get -qq install libstdc++-4.8-dev
+sudo: false
 rvm:
   - 2.0.0
   - 2.1.8
   - 2.2.4
   - 2.3.0
+  - ruby-head
   - rbx-2
 env: COVERAGE=true
 matrix:
@@ -16,4 +13,3 @@ matrix:
   allow_failures:
     - rvm: ruby-head
     - rvm: "rbx-2"
-
