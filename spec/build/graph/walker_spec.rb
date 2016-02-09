@@ -29,14 +29,14 @@ module Build::Graph::WalkerSpec
 	include Build::Files
 	
 	describe Build::Graph::Walker do
+		let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
+		
 		it "should be unique" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
 			
 			node_a = Node.new(test_glob, listing_output, "a")
 			node_b = Node.new(listing_output, Paths::NONE, "b")
-			
-			nodes = Set.new([node_a, node_b])
 			
 			sequence = []
 			
@@ -49,7 +49,7 @@ module Build::Graph::WalkerSpec
 				end
 			end
 			
-			walker.update(nodes)
+			walker.update([node_a, node_b])
 			
 			expect(walker.tasks.count).to be == 2
 			expect(walker.failed_tasks.count).to be == 0
@@ -64,8 +64,6 @@ module Build::Graph::WalkerSpec
 			node_a = Node.new(test_glob, listing_output, "a")
 			node_b = Node.new(listing_output, summary_output, "b")
 			
-			nodes = Set.new([node_a, node_b])
-			
 			# A walker runs repeatedly, updating tasks which have been marked as dirty.
 			walker = Walker.new do |walker, node|
 				task = Task.new(walker, node)
@@ -77,7 +75,7 @@ module Build::Graph::WalkerSpec
 				end
 			end
 			
-			walker.update(nodes)
+			walker.update([node_a, node_b])
 			
 			expect(walker.tasks.count).to be == 2
 			expect(walker.failed_tasks.count).to be == 2

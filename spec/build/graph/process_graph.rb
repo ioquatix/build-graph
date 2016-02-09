@@ -58,12 +58,16 @@ module ProcessGraph
 			end
 		end
 		
-		def fs
-			if wet?
-				FileUtils::Verbose
-			else
-				FileUtils::Verbose::Dry
-			end
+		def mkpath(*args)
+			return unless wet?
+			
+			FileUtils.mkpath(*args)
+		end
+		
+		def install(*args)
+			return unless wet?
+			
+			FileUtils.install(*args)
 		end
 		
 		# This function is called to finish the invocation of the task within the graph.
