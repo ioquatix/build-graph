@@ -166,7 +166,7 @@ module Build
 				
 				@tasks[task.node] = task
 				
-				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is not a problem in practice.
+				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is by design and is not a problem in practice.
 				
 				if outputs = task.outputs
 					@logger.debug{"Task will generate outputs: #{outputs.to_a.collect(&:to_s).inspect}"}

@@ -128,8 +128,6 @@ module Build::Graph::GraphSpec
 			
 			walker = Walker.for(ProcessTask, group)
 			
-			#FileUtils.touch(code_glob.first)
-			
 			top = ProcessNode.top files do
 				mkpath destination
 				
@@ -137,6 +135,7 @@ module Build::Graph::GraphSpec
 					destination_path = source_path.rebase(destination)
 					
 					process source_path, destination_path do
+						$stderr.puts "Copying #{inputs.first} -> #{outputs.first}"
 						install inputs.first, outputs.first
 					end
 				end
@@ -149,7 +148,8 @@ module Build::Graph::GraphSpec
 				while triggered == 0 or trashed_files == false
 					sleep 0.1 if trashed_files
 					
-					destination.glob("*.cpp").each{|path| path.delete}
+					$stderr.puts "Deleting destination files from thread: #{destination.glob("*.cpp")}"
+					destination.glob("*.cpp").delete
 					
 					trashed_files = true
 				end
