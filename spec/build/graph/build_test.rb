@@ -57,8 +57,9 @@ viz = Graphviz::Graph.new
 viz.attributes[:rankdir] = 'LR'
 
 walker.run do
-	walker.update(top)
-	group.wait
+	group.wait do
+		walker.update(top)
+	end
 	
 	walker.tasks.each do |node, task|
 		input_nodes = []

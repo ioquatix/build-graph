@@ -27,10 +27,6 @@ module Build::Graph::GraphSpec
 	describe Build::Graph do
 		let(:group) {Process::Group.new}
 		
-		after(:each) do
-			group.wait
-		end
-		
 		it "shouldn't update mtime" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
@@ -45,13 +41,15 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			walker.update(top)
-			group.wait
+			group.wait do
+				walker.update(top)
+			end
 			
 			first_modified_time = listing_output.first.modified_time
 			
-			walker.update(top)
-			group.wait
+			group.wait do
+				walker.update(top)
+			end
 			
 			# The output file shouldn't have been changed because already exists and the input files haven't changed either:
 			second_modified_time = listing_output.first.modified_time
@@ -65,8 +63,9 @@ module Build::Graph::GraphSpec
 			# The granularity of modification times isn't that great, so we use >= below.
 			# sleep 1
 			
-			walker.update(top)
-			group.wait
+			group.wait do
+				walker.update(top)
+			end
 			
 			expect(listing_output.first.modified_time).to be >= first_modified_time
 			
@@ -114,8 +113,9 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			walker.update(top)
-			group.wait
+			group.wait do
+				walker.update(top)
+			end
 			
 			expect(program_path).to be_exist
 			expect(code_glob.first.modified_time).to be <= program_path.modified_time
@@ -158,8 +158,9 @@ module Build::Graph::GraphSpec
 			walker.run do
 				triggered += 1
 				
-				walker.update(top)
-				group.wait
+				group.wait do
+					walker.update(top)
+				end
 				
 				break if trashed_files
 			end
