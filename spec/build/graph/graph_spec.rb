@@ -27,6 +27,8 @@ module Build::Graph::GraphSpec
 	describe Build::Graph do
 		let(:group) {Process::Group.new}
 		
+		let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
+		
 		it "shouldn't update mtime" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
@@ -141,28 +143,27 @@ module Build::Graph::GraphSpec
 				end
 			end
 			
-			triggered = 0
-			trashed_files = false
+			mutex = Mutex.new
+			files_deleted = false
 			
 			thread = Thread.new do
-				while triggered == 0 or trashed_files == false
-					sleep 0.1 if trashed_files
-					
-					$stderr.puts "Deleting destination files from thread: #{destination.glob("*.cpp")}"
+				sleep 1
+				
+				mutex.synchronize do
 					destination.glob("*.cpp").delete
 					
-					trashed_files = true
+					files_deleted = true
 				end
 			end
 			
 			walker.run do
-				triggered += 1
-				
-				group.wait do
-					walker.update(top)
+				mutex.synchronize do
+					group.wait do
+						walker.update(top)
+					end
 				end
 				
-				break if trashed_files
+				break if files_deleted
 			end
 			
 			thread.join
