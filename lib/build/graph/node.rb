@@ -50,6 +50,10 @@ module Build
 				@inputs.map{|path| path.modified_time}.max
 			end
 			
+			def missing?
+				@inputs.any?{|path| !path.exist?} || @outputs.any?{|path| !path.exist?}
+			end
+			
 			# This is a canonical dirty function. All outputs must exist and must be newer than all inputs. This function is not efficient, in the sense that it must query all files on disk for last modified time.
 			def dirty?
 				if inherit_outputs?
@@ -60,8 +64,8 @@ module Build
 					
 					# I'm not entirely sure this is the correct approach. If input is a glob that matched zero items, but might match items that are older than outputs, what is the correct output from this function?
 				else
-					# Dirty if any outputs don't exist:
-					return true if @outputs.any?{|path| !path.exist?}
+					# Dirty if any inputs or outputs missing:
+					return true if missing?
 					
 					# Dirty if input modified after any output:
 					if input_modified_time = self.modified_time

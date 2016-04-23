@@ -64,5 +64,25 @@ module Build::Graph::NodeSpec
 			
 			listing_output.first.delete
 		end
+		
+		it "should be dirty if input files are missing" do
+			input = Paths.directory(__dir__, ["missing-input.txt"])
+			output = Glob.new(__dir__, "*.rb")
+			
+			node = Node.new(input, output, "a")
+			
+			expect(node.missing?).to be true
+			expect(node.dirty?).to be true
+		end
+		
+		it "should be dirty if output files are missing" do
+			input = Glob.new(__dir__, "*.rb")
+			output = Paths.directory(__dir__, ["missing-output.txt"])
+			
+			node = Node.new(input, output, "a")
+			
+			expect(node.missing?).to be true
+			expect(node.dirty?).to be true
+		end
 	end
 end
