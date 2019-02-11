@@ -51,7 +51,7 @@ module Build
 			end
 			
 			def missing?
-				@inputs.any?{|path| !path.exist?} || @outputs.any?{|path| !path.exist?}
+				@outputs.any?{|path| !path.exist?} || @inputs.any?{|path| !path.exist?}
 			end
 			
 			# This is a canonical dirty function. All outputs must exist and must be newer than all inputs. This function is not efficient, in the sense that it must query all files on disk for last modified time.
