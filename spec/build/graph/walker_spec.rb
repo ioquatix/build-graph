@@ -28,7 +28,7 @@ module Build::Graph::WalkerSpec
 	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Walker do
+	RSpec.describe Build::Graph::Walker do
 		let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
 		
 		it "should be unique" do

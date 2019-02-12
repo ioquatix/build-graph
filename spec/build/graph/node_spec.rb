@@ -27,7 +27,7 @@ module Build::Graph::NodeSpec
 	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Node do
+	RSpec.describe Build::Graph::Node do
 		it "should be unique" do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])

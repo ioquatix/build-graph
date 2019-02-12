@@ -24,7 +24,7 @@ require_relative 'process_graph'
 module Build::Graph::GraphSpec
 	include ProcessGraph
 	
-	describe Build::Graph do
+	RSpec.describe Build::Graph do
 		let(:group) {Process::Group.new}
 		
 		let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}

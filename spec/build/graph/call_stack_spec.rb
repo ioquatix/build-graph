@@ -21,22 +21,20 @@
 
 require 'build/graph/call_stack'
 
-module Build::Graph::CallStackSpec
-	describe Build::Graph::CallStack do
-		it "should merge state" do
-			outer_state = nil
-			inner_state = nil
+RSpec.describe Build::Graph::CallStack do
+	it "should merge state" do
+		outer_state = nil
+		inner_state = nil
+		
+		subject.with(x: 10) do
+			outer_state = subject.last
 			
-			subject.with(x: 10) do
-				outer_state = subject.last
-				
-				subject.with(x: 20, y: 30) do
-					inner_state = subject.last
-				end
+			subject.with(x: 20, y: 30) do
+				inner_state = subject.last
 			end
-			
-			expect(outer_state).to include(:x)
-			expect(inner_state).to include(:x, :y)
 		end
+		
+		expect(outer_state).to include(:x)
+		expect(inner_state).to include(:x, :y)
 	end
 end

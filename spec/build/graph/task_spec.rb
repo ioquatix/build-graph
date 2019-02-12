@@ -28,7 +28,7 @@ module Build::Graph::TaskSpec
 	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Task do
+	RSpec.describe Build::Graph::Task do
 		it "should wait for children" do
 			node_a = Node.new(Paths::NONE, Paths::NONE, "a")
 			node_b = Node.new(Paths::NONE, Paths::NONE, "b")

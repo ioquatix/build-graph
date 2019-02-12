@@ -27,7 +27,7 @@ module Build::Graph::InheritSpec
 	include Build::Graph
 	include Build::Files
 	
-	describe Build::Graph::Walker do
+	RSpec.describe Build::Graph::Walker do
 		it "should inherit children outputs", :focus do
 			test_glob = Glob.new(__dir__, "*.rb")
 			listing_output = Paths.directory(__dir__, ["listing.txt"])
