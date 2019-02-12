@@ -93,8 +93,8 @@ module Build
 				end
 			end
 			
-			def call(node, state = nil)
-				@call_stack.with(state) do
+			def call(node, **state)
+				@call_stack.with(**state) do
 					# We try to fetch the task if it has already been invoked, otherwise we create a new task.
 					@tasks.fetch(node) do
 						@logger.debug{"Update: #{node}"}

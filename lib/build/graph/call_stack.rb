@@ -31,7 +31,7 @@ module Build
 			attr :frames
 			
 			# Yield with the given state, merged with any prior state.
-			def with(state)
+			def with(**state)
 				if state and !state.empty?
 					@frames << @frames.last.merge(state).freeze
 					yield
