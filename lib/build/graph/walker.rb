@@ -87,6 +87,12 @@ module Build
 				end
 			end
 			
+			def with(**state)
+				@call_stack.with(**state) do
+					yield
+				end
+			end
+			
 			def call(node, state = nil)
 				@call_stack.with(state) do
 					# We try to fetch the task if it has already been invoked, otherwise we create a new task.

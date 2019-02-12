@@ -105,8 +105,8 @@ module Build
 				return self
 			end
 			
-			def invoke(node)
-				child_task = @walker.call(node)
+			def invoke(node, **options)
+				child_task = @walker.call(node, **options)
 				
 				raise ArgumentError.new("Invalid child task") unless child_task
 				
