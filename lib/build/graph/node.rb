@@ -89,7 +89,7 @@ module Build
 			end
 			
 			def inspect
-				"#<#{self.class} #{@inputs.inspect} => #{@outputs.inspect} by #{@process.inspect}>"
+				"#<#{self.class} #{@inputs.inspect} => #{@outputs.inspect} by #{@process}>"
 			end
 			
 			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, **options, &block)
