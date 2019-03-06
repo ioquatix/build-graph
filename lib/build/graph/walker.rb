@@ -25,14 +25,12 @@ require_relative 'task'
 require_relative 'node'
 require_relative 'edge'
 
-require_relative 'call_stack'
-
 module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
 			def self.for(task_class, *args, **options)
-				self.new(**options) do |walker, node|
+				self.new(**options) do |walker, node, parent_task = nil|
 					task = task_class.new(walker, node, *args)
 					
 					task.visit do
@@ -58,8 +56,6 @@ module Build
 				
 				@logger = logger || Logger.new(nil)
 				@monitor = Files::Monitor.new(logger: @logger)
-				
-				@call_stack = CallStack.new
 			end
 			
 			# Primarily for debugging from within Task
@@ -87,23 +83,16 @@ module Build
 				end
 			end
 			
-			def with(**state)
-				@call_stack.with(**state) do
-					yield
-				end
-			end
-			
-			def call(node, **state)
-				@call_stack.with(**state) do
-					# We try to fetch the task if it has already been invoked, otherwise we create a new task.
-					@tasks.fetch(node) do
-						@logger.debug{"Update: #{node}"}
-						
-						@update.call(self, node, @call_stack.last)
-						
-						# This should now be defined:
-						return @tasks[node]
-					end
+			def call(node, parent_task = nil)
+				# We try to fetch the task if it has already been invoked, otherwise we create a new task.
+				@tasks.fetch(node) do
+					@logger.debug{"Update: #{node} #{parent_task.inspect}"}
+					
+					# This method should add the node
+					@update.call(self, node, parent_task)
+					
+					# This should now be defined:
+					return @tasks[node]
 				end
 			end
 			
