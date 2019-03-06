@@ -60,15 +60,12 @@ module Build
 			def traverse(task)
 				@count -= 1
 				
-				$stderr.puts "edge #{self}.traverse @count = #{@count}"
-				
 				# The entire edge fails if any individual task fails.
 				if task.failed?
 					@failed << task
 				end
 				
 				if @count == 0
-					$stderr.puts "edge #{self}.traverse resume fiber"
 					@fiber.resume
 				end
 			end
