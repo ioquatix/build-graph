@@ -28,6 +28,39 @@ RSpec.describe Build::Graph::Walker do
 	let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
 	
 	it "can generate the same output from multiple tasks" do
+		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
+		
+		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
+		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, listing_output, "b")
+		
+		sequence = []
+		
+		# A walker runs repeatedly, updating tasks which have been marked as dirty.
+		walker = Build::Graph::Walker.new(logger: logger) do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
+			
+			task.visit do
+				if node.process == "a"
+					task.invoke(node_b)
+				end
+				
+				node.outputs.each do |output|
+					output.touch
+				end
+				sequence << node.process
+			end
+		end
+		
+		edge = double()
+		walker.outputs[listing_output.first.to_s] ||= [edge]
+		expect(edge).to receive(:traverse)
+		
+		walker.update([node_a, node_a])
+		
+		expect(walker.tasks.count).to be == 2
+		expect(walker.failed_tasks.count).to be == 0
+		expect(sequence).to be == ['b', 'a']
 	end
 	
 	it "should be unique" do
