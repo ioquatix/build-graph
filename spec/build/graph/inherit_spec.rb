@@ -23,34 +23,29 @@ require 'build/graph/walker'
 require 'build/graph/task'
 require 'build/files'
 
-module Build::Graph::InheritSpec
-	include Build::Graph
-	include Build::Files
-	
-	RSpec.describe Build::Graph::Walker do
-		it "should inherit children outputs", :focus do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
+RSpec.describe Build::Graph::Walker do
+	it "should inherit children outputs", :focus do
+		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
+		
+		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit, "a")
+		node_b = Build::Graph::Node.new(test_glob, listing_output, "b")
+		
+		walker = Build::Graph::Walker.new do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
 			
-			node_a = Node.new(Paths::NONE, :inherit, "a")
-			node_b = Node.new(test_glob, listing_output, "b")
-			
-			walker = Walker.new do |walker, node|
-				task = Task.new(walker, node)
-				
-				task.visit do
-					if node.process == 'a'
-						task.invoke(node_b)
-					end
+			task.visit do
+				if node.process == 'a'
+					task.invoke(node_b)
 				end
 			end
-			
-			walker.update([node_a])
-			
-			task_a = walker.tasks[node_a]
-			task_b = walker.tasks[node_b]
-			
-			expect(task_a.outputs.to_a).to be == task_b.outputs.to_a
 		end
+		
+		walker.update([node_a])
+		
+		task_a = walker.tasks[node_a]
+		task_b = walker.tasks[node_b]
+		
+		expect(task_a.outputs.to_a).to be == task_b.outputs.to_a
 	end
 end

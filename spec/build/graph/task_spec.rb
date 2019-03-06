@@ -24,43 +24,38 @@ require 'build/graph/walker'
 require 'build/graph/task'
 require 'build/files/glob'
 
-module Build::Graph::TaskSpec
-	include Build::Graph
-	include Build::Files
-	
-	RSpec.describe Build::Graph::Task do
-		it "should wait for children" do
-			node_a = Node.new(Paths::NONE, Paths::NONE, "a")
-			node_b = Node.new(Paths::NONE, Paths::NONE, "b")
+RSpec.describe Build::Graph::Task do
+	it "should wait for children" do
+		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE, "a")
+		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE, "b")
+		
+		nodes = Set.new([node_a])
+		
+		sequence = []
+		
+		# A walker runs repeatedly, updating tasks which have been marked as dirty.
+		walker = Build::Graph::Walker.new do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
 			
-			nodes = Set.new([node_a])
-			
-			sequence = []
-			
-			# A walker runs repeatedly, updating tasks which have been marked as dirty.
-			walker = Walker.new do |walker, node|
-				task = Task.new(walker, node)
+			task.visit do
+				sequence << node.process.upcase
 				
-				task.visit do
-					sequence << node.process.upcase
-					
-					if node.process == 'a'
-						# This will invoke node_b concurrently, but as it is a child, task.visit won't finish until node_b is done.
-						task.invoke(node_b)
-					end
+				if node.process == 'a'
+					# This will invoke node_b concurrently, but as it is a child, task.visit won't finish until node_b is done.
+					task.invoke(node_b)
 				end
-				
-				sequence << node.process
 			end
 			
-			walker.update(nodes)
-			
-			expect(walker.tasks.count).to be == 2
-			expect(walker.failed_tasks.count).to be == 0
-			
-			task_b = walker.tasks[node_b]
-			expect(walker.tasks[node_a].children).to be == [task_b]
-			expect(sequence).to be == ['A', 'B', 'b', 'a']
+			sequence << node.process
 		end
+		
+		walker.update(nodes)
+		
+		expect(walker.tasks.count).to be == 2
+		expect(walker.failed_tasks.count).to be == 0
+		
+		task_b = walker.tasks[node_b]
+		expect(walker.tasks[node_a].children).to be == [task_b]
+		expect(sequence).to be == ['A', 'B', 'b', 'a']
 	end
 end

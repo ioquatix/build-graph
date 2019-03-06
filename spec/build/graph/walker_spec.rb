@@ -24,68 +24,69 @@ require 'build/graph/walker'
 require 'build/graph/task'
 require 'build/files/glob'
 
-module Build::Graph::WalkerSpec
-	include Build::Graph
-	include Build::Files
+RSpec.describe Build::Graph::Walker do
+	let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
 	
-	RSpec.describe Build::Graph::Walker do
-		let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
+	it "can generate the same output from multiple tasks" do
+	end
+	
+	it "should be unique" do
+		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
 		
-		it "should be unique" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
+		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
+		node_b = Build::Graph::Node.new(listing_output, Build::Files::Paths::NONE, "b")
+		
+		sequence = []
+		
+		# A walker runs repeatedly, updating tasks which have been marked as dirty.
+		walker = Build::Graph::Walker.new(logger: logger) do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
 			
-			node_a = Node.new(test_glob, listing_output, "a")
-			node_b = Node.new(listing_output, Paths::NONE, "b")
-			
-			sequence = []
-			
-			# A walker runs repeatedly, updating tasks which have been marked as dirty.
-			walker = Walker.new do |walker, node|
-				task = Task.new(walker, node)
-				
-				task.visit do
-					sequence << node.process
+			task.visit do
+				node.outputs.each do |output|
+					output.touch
 				end
+				sequence << node.process
 			end
-			
-			walker.update([node_a, node_b])
-			
-			expect(walker.tasks.count).to be == 2
-			expect(walker.failed_tasks.count).to be == 0
-			expect(sequence).to be == ['a', 'b']
 		end
 		
-		it "should cascade failure" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
-			summary_output = Paths.directory(__dir__, ["summary.txt"])
+		walker.update([node_a, node_b])
+		
+		expect(walker.tasks.count).to be == 2
+		expect(walker.failed_tasks.count).to be == 0
+		expect(sequence).to be == ['a', 'b']
+	end
+	
+	it "should cascade failure" do
+		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
+		summary_output = Build::Files::Paths.directory(__dir__, ["summary.txt"])
+		
+		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
+		node_b = Build::Graph::Node.new(listing_output, summary_output, "b")
+		
+		# A walker runs repeatedly, updating tasks which have been marked as dirty.
+		walker = Build::Graph::Walker.new do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
 			
-			node_a = Node.new(test_glob, listing_output, "a")
-			node_b = Node.new(listing_output, summary_output, "b")
-			
-			# A walker runs repeatedly, updating tasks which have been marked as dirty.
-			walker = Walker.new do |walker, node|
-				task = Task.new(walker, node)
-				
-				task.visit do
-					if node.process == 'a'
-						raise TransientError.new('Test Failure')
-					end
+			task.visit do
+				if node.process == 'a'
+					raise Build::Graph::TransientError.new('Test Failure')
 				end
 			end
-			
-			walker.update([node_a, node_b])
-			
-			expect(walker.tasks.count).to be == 2
-			expect(walker.failed_tasks.count).to be == 2
-			expect(listing_output).to be_intersect walker.failed_outputs
-			expect(summary_output).to be_intersect walker.failed_outputs
-			
-			walker.clear_failed
-			
-			expect(walker.tasks.count).to be == 0
-			expect(walker.failed_tasks.count).to be == 0
 		end
+		
+		walker.update([node_a, node_b])
+		
+		expect(walker.tasks.count).to be == 2
+		expect(walker.failed_tasks.count).to be == 2
+		expect(listing_output).to be_intersect walker.failed_outputs
+		expect(summary_output).to be_intersect walker.failed_outputs
+		
+		walker.clear_failed
+		
+		expect(walker.tasks.count).to be == 0
+		expect(walker.failed_tasks.count).to be == 0
 	end
 end
