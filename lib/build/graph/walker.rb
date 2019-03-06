@@ -169,7 +169,8 @@ module Build
 					@logger.debug{"Task will generate outputs: #{outputs.to_a.collect(&:to_s).inspect}"}
 					
 					outputs.each do |path|
-						@outputs[path.to_s] = []
+						# Tasks which have children tasks may list the same output twice. This is not a bug.
+						@outputs[path.to_s] ||= []
 					end
 				end
 			end
