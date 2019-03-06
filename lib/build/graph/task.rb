@@ -42,6 +42,7 @@ module Build
 				@walker.tasks[node] = self
 				
 				@node = node
+				@fiber = nil
 				
 				@error = nil
 				
@@ -78,6 +79,10 @@ module Build
 				# Inforn the walker a new task is being generated for this node:
 				@walker.enter(self)
 				
+				if @fiber
+					raise RuntimeError, "Task is already running!"
+				end
+				
 				@fiber = Fiber.new do
 					# If all inputs were good, we can update the node.
 					if wait_for_inputs?
@@ -99,6 +104,8 @@ module Build
 					@state ||= :complete
 					
 					@walker.exit(self)
+					
+					@fiber = nil
 				end
 				
 				# Schedule the work, hopefully synchronously:
