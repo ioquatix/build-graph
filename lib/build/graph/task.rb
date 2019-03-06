@@ -134,7 +134,11 @@ module Build
 			# Returns true if the outputs of the task are out of date w.r.t. the inputs.
 			# Currently, does not take into account if the input is a glob and files have been added.
 			def dirty?
-				@outputs.dirty?(@inputs)
+				if @outputs
+					@outputs.dirty?(@inputs)
+				else
+					true
+				end
 			end
 			
 			def changed!
