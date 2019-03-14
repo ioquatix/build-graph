@@ -12,7 +12,6 @@ code_glob = Glob.new(program_root, "*.cpp")
 program_path = Path.join(program_root, "dictionary-sort")
 
 group = Process::Group.new
-logger = Logger.new($stderr)
 walker = Walker.for(ProcessTask, group)
 
 top = ProcessNode.top code_glob, title: 'top' do

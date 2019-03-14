@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 require 'set'
-require 'logger'
+require 'event/console'
 
 require_relative 'task'
 require_relative 'node'
@@ -39,7 +39,7 @@ module Build
 				end
 			end
 			
-			def initialize(logger: nil, &block)
+			def initialize(logger: Event::Console.logger, &block)
 				# Node -> Task mapping.
 				@tasks = {}
 				
@@ -54,7 +54,7 @@ module Build
 				@failed_tasks = []
 				@failed_outputs = Set.new
 				
-				@logger = logger || Logger.new(nil)
+				@logger = logger
 				@monitor = Files::Monitor.new(logger: @logger)
 			end
 			
@@ -86,7 +86,7 @@ module Build
 			def call(node, parent_task = nil)
 				# We try to fetch the task if it has already been invoked, otherwise we create a new task.
 				@tasks.fetch(node) do
-					@logger.debug{"Update: #{node} #{parent_task.class}"}
+					@logger&.debug(self) {"Update: #{node} #{parent_task.class}"}
 					
 					# This method should add the node
 					@update.call(self, node, parent_task)
@@ -112,7 +112,7 @@ module Build
 				paths.each do |path|
 					# Is there a task generating this output?
 					if outputs = @outputs[path]
-						@logger.debug{"Task #{task} is waiting on path #{path}"}
+						@logger&.debug(self) {"Task #{task} is waiting on path #{path}"}
 						
 						# When the output is ready, trigger this edge:
 						outputs << edge
@@ -139,7 +139,7 @@ module Build
 				# If there are no children like this, then done:
 				return true if children.size == 0
 				
-				@logger.debug{"Task #{parent} is waiting on #{children.count} children"}
+				@logger&.debug(self) {"Task #{parent} is waiting on #{children.count} children"}
 				
 				# Otherwise, construct an edge to track state changes:
 				edge = Edge.new
@@ -159,14 +159,19 @@ module Build
 			end
 			
 			def enter(task)
-				@logger.debug{"Walker entering: #{task.node.process}"}
+				@logger&.info(self) {"Walker entering: #{task.node.process}"}
 				
 				@tasks[task.node] = task
 				
 				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is by design and is not a problem in practice.
 				
 				if outputs = task.outputs
-					@logger.debug{"Task will generate outputs: #{outputs.to_a.collect(&:to_s).inspect}"}
+					@logger&.debug(self) do |buffer|
+						buffer.puts "Task will generate outputs:"
+						Array(outputs).each do |output|
+							buffer.puts output.inspect
+						end
+					end
 					
 					outputs.each do |path|
 						# Tasks which have children tasks may list the same output twice. This is not a bug.
@@ -176,7 +181,7 @@ module Build
 			end
 			
 			def exit(task)
-				@logger.debug{"Walker exiting: #{task.node.process}, task #{task.failed? ? 'failed' : 'succeeded'}"}
+				@logger&.info(self) {"Walker exiting: #{task.node.process}, task #{task.failed? ? 'failed' : 'succeeded'}"}
 				
 				# Fail outputs if the node failed:
 				if task.failed?
@@ -191,16 +196,10 @@ module Build
 				task.outputs.each do |path|
 					path = path.to_s
 					
-					if logger.debug?
-						if task.failed?
-							@logger.debug "\tFile failed: #{path}"
-						else
-							@logger.debug "\tFile available: #{path}"
-						end
-					end
+					@logger&.debug(self) {"File #{task.failed? ? 'failed' : 'available'}: #{path}"}
 					
 					if edges = @outputs.delete(path)
-						# @logger.debug "\tUpdating #{edges.count} edges..."
+						# @logger&.debug "\tUpdating #{edges.count} edges..."
 						edges.each{|edge| edge.traverse(task)}
 					end
 				end
@@ -214,7 +213,7 @@ module Build
 			end
 			
 			def delete(node)
-				@logger.debug{"Delete #{node}"}
+				@logger&.debug(self) {"Delete #{node}"}
 
 				if task = @tasks.delete(node)
 					@monitor.delete(task)

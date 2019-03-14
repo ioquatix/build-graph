@@ -24,8 +24,6 @@ require_relative 'process_graph'
 RSpec.describe Build::Graph do
 	let(:group) {Process::Group.new}
 	
-	let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
-	
 	it "shouldn't update mtime" do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])

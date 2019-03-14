@@ -3,6 +3,8 @@ require 'process/group'
 require 'build/files'
 require 'build/graph'
 
+require 'event/shell'
+
 class ProcessNode < Build::Graph::Node
 	def initialize(inputs, outputs, block, title: nil)
 		super(inputs, outputs, block.source_location)
@@ -45,7 +47,8 @@ class ProcessTask < Build::Graph::Task
 	
 	def run(*arguments)
 		if wet?
-			puts "\t[run] #{arguments.join(' ')}"
+			@walker.logger.debug(self) {Event::Shell.for(*arguments)}
+			
 			status = @group.spawn(*arguments)
 			
 			if status != 0

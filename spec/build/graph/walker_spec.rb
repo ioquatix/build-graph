@@ -25,8 +25,6 @@ require 'build/graph/task'
 require 'build/files/glob'
 
 RSpec.describe Build::Graph::Walker do
-	let(:logger) {Logger.new($stderr).tap{|logger| logger.level = Logger::DEBUG}}
-	
 	it "can generate the same output from multiple tasks" do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
@@ -37,7 +35,7 @@ RSpec.describe Build::Graph::Walker do
 		sequence = []
 		
 		# A walker runs repeatedly, updating tasks which have been marked as dirty.
-		walker = Build::Graph::Walker.new(logger: logger) do |walker, node|
+		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do
@@ -73,7 +71,7 @@ RSpec.describe Build::Graph::Walker do
 		sequence = []
 		
 		# A walker runs repeatedly, updating tasks which have been marked as dirty.
-		walker = Build::Graph::Walker.new(logger: logger) do |walker, node|
+		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do

@@ -24,10 +24,9 @@ Gem::Specification.new do |spec|
 	
 	spec.add_dependency "process-group", "~> 1.1"
 	spec.add_dependency "build-files", "~> 1.0"
+	spec.add_dependency "event", "~> 1.0"
 	
 	spec.add_development_dependency "build-makefile", "~> 1.0"
-	
-	spec.add_dependency "rainbow", "~> 2.0"
 	
 	spec.add_development_dependency "covered"
 	spec.add_development_dependency "bundler"

@@ -180,10 +180,7 @@ module Build
 			def fail!(error)
 				@annotation = "failed"
 				
-				if logger = @walker.logger
-					logger.error("Task #{self} failed: #{error}")
-					logger.debug(error) if error.kind_of?(Exception)
-				end
+				@walker.logger&.error(self) {error}
 				
 				@error = error
 				@state = :failed
