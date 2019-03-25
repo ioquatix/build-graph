@@ -21,8 +21,6 @@
 require 'build/files/state'
 require 'build/files'
 
-require 'rainbow'
-
 module Build
 	module Graph
 		# This is essentialy a immutable key:
