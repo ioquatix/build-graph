@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 require 'set'
-require 'event/console'
+require 'console'
 
 require_relative 'task'
 require_relative 'node'
@@ -39,7 +39,7 @@ module Build
 				end
 			end
 			
-			def initialize(logger: Event::Console.logger, &block)
+			def initialize(logger: Console.logger, &block)
 				# Node -> Task mapping.
 				@tasks = {}
 				
