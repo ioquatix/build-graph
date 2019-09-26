@@ -20,6 +20,6 @@
 
 module Build
 	module Graph
-		VERSION = "1.4.3"
+		VERSION = "1.5.0"
 	end
 end
