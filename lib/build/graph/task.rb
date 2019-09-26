@@ -46,6 +46,10 @@ module Build
 				
 				@error = nil
 				
+				# Tasks that must be complete before processing this task.
+				@dependencies = []
+				
+				# Tasks that must be complete before finishing this task.
 				@children = []
 				
 				@state = nil
@@ -57,7 +61,9 @@ module Build
 			attr :inputs
 			attr :outputs
 			
+			attr :dependencies
 			attr :children
+			
 			attr :state
 			
 			attr :annotation
@@ -154,6 +160,7 @@ module Build
 			end
 			
 		protected
+			
 			def update_inputs_and_outputs
 				# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.
 				@inputs = Files::State.new(@node.inputs)
@@ -188,16 +195,35 @@ module Build
 			
 			# Returns false if any input failed.
 			def wait_for_inputs?
-				@annotation = "wait for inputs"
 				# Wait on any inputs, returns whether any inputs failed:
-				@walker.wait_on_paths(self, @inputs)
+				if @inputs&.any?
+					@annotation = "wait for inputs"
+					unless @walker.wait_on_paths(self, @inputs)
+						return false
+					end
+				end
+				
+				if @dependencies&.any?
+					@annotation = "wait for dependencies"
+					unless @walker.wait_for_children(self, @dependencies)
+						return false
+					end
+				end
+				
+				return true
 			end
 			
 			# Returns false if any child failed.
 			def wait_for_children?
-				@annotation = "wait for children"
+				if @children&.any?
+					@annotation = "wait for children"
+					
+					unless @walker.wait_for_children(self, @children)
+						return false
+					end
+				end
 				
-				@walker.wait_for_children(self, @children)
+				return true
 			end
 		end
 	end
