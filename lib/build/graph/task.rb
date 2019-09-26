@@ -36,7 +36,7 @@ module Build
 		end
 		
 		class Task
-			def initialize(walker, node)
+			def initialize(walker, node, dependencies: nil)
 				@walker = walker
 				
 				@walker.tasks[node] = self
@@ -47,7 +47,7 @@ module Build
 				@error = nil
 				
 				# Tasks that must be complete before processing this task.
-				@dependencies = []
+				@dependencies = dependencies
 				
 				# Tasks that must be complete before finishing this task.
 				@children = []
