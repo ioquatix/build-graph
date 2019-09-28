@@ -36,7 +36,7 @@ module Build
 		end
 		
 		class Task
-			def initialize(walker, node, dependencies: nil)
+			def initialize(walker, node)
 				@walker = walker
 				
 				@walker.tasks[node] = self
@@ -45,9 +45,6 @@ module Build
 				@fiber = nil
 				
 				@error = nil
-				
-				# Tasks that must be complete before processing this task.
-				@dependencies = dependencies
 				
 				# Tasks that must be complete before finishing this task.
 				@children = []
@@ -61,7 +58,6 @@ module Build
 			attr :inputs
 			attr :outputs
 			
-			attr :dependencies
 			attr :children
 			
 			attr :state
@@ -199,13 +195,6 @@ module Build
 				if @inputs&.any?
 					@annotation = "wait for inputs"
 					unless @walker.wait_on_paths(self, @inputs)
-						return false
-					end
-				end
-				
-				if @dependencies&.any?
-					@annotation = "wait for dependencies"
-					unless @walker.wait_for_children(self, @dependencies)
 						return false
 					end
 				end
