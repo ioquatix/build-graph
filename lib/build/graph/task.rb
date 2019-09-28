@@ -50,7 +50,6 @@ module Build
 				@children = []
 				
 				@state = nil
-				@annotation = nil
 				
 				@inputs_failed = false
 			end
@@ -61,8 +60,6 @@ module Build
 			attr :children
 			
 			attr :state
-			
-			attr :annotation
 			
 			# The error, if the execution of the node fails.
 			attr :error
@@ -189,30 +186,28 @@ module Build
 				@children.collect(&:outputs).inject(Files::Paths::NONE, &:+)
 			end
 			
+			# If the node's outputs were a glob, this checks the filesystem to figure out what files were actually generated. If it inherits the outputs of the child tasks, it 
 			def update_outputs
 				if @node.inherit_outputs?
 					@outputs = Files::State.new(self.children_outputs)
 				else
-					@annotation = "update outputs"
 					# After the task has finished, we update the output states:
 					@outputs.update!
 				end
 			end
 			
+			# Fail the task with the given error. Any task which is waiting on this task will also fail (eventually).
 			def fail!(error)
-				@annotation = "failed"
-				
 				@walker.logger&.error(self) {error}
 				
 				@error = error
 				@state = :failed
 			end
 			
-			# Returns false if any input failed.
+			# @return [Boolean] if all inputs succeeded.
 			def wait_for_inputs?
 				# Wait on any inputs, returns whether any inputs failed:
 				if @inputs&.any?
-					@annotation = "wait for inputs"
 					unless @walker.wait_on_paths(self, @inputs)
 						return false
 					end
@@ -221,11 +216,9 @@ module Build
 				return true
 			end
 			
-			# Returns false if any child failed.
+			# @return [Boolean] if all children succeeded.
 			def wait_for_children?
 				if @children&.any?
-					@annotation = "wait for children"
-					
 					unless @walker.wait_for_children(self, @children)
 						return false
 					end
