@@ -7,15 +7,25 @@ require 'console/event/spawn'
 
 class ProcessNode < Build::Graph::Node
 	def initialize(inputs, outputs, block, title: nil)
-		super(inputs, outputs, block.source_location)
+		super(inputs, outputs)
 		
 		if title
 			@title = title
 		else
-			@title = self.process
+			@title = block.source_location
 		end
 		
 		@block = block
+	end
+	
+	def == other
+		super and
+			@title == other.title and
+			@block == other.block
+	end
+	
+	def hash
+		super ^ @title.hash ^ @block.hash
 	end
 	
 	def evaluate(context)

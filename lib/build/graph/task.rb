@@ -97,7 +97,9 @@ module Build
 						fail!(InputsFailed)
 					end
 					
-					unless wait_for_children?
+					if wait_for_children?
+						update_outputs
+					else
 						fail!(ChildrenFailed)
 					end
 					
@@ -117,12 +119,15 @@ module Build
 				return self
 			end
 			
+			# @return [Task] the child task that was created to update the node.
 			def invoke(node)
 				child_task = @walker.call(node, self)
 				
 				raise ArgumentError.new("Invalid child task") unless child_task
 				
 				@children << child_task
+				
+				return child_task
 			end
 			
 			def failed?
@@ -151,11 +156,25 @@ module Build
 				(@inputs.roots + @outputs.roots).collect{|path| path.to_s}
 			end
 			
-			def inspect
-				"#<#{self.class}:#{'0x%X' % self.object_id} #{@node.inspect} #{@state}>"
+			def to_s
+				"#<#{self.class} #{node_string} #{state_string}>"
 			end
 			
 		protected
+			
+			def state_string
+				if @state
+					@state.to_s
+				elsif @fiber
+					"running"
+				else
+					"new"
+				end
+			end
+			
+			def node_string
+				@node.inspect
+			end
 			
 			def update_inputs_and_outputs
 				# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.

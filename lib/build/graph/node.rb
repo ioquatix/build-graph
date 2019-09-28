@@ -25,18 +25,14 @@ module Build
 	module Graph
 		# This is essentialy a immutable key:
 		class Node
-			def initialize(inputs, outputs, process)
-				# These are immutable - rather than change them, create a new node:
+			# @param process [Object] Represents an abstract process, e.g. a name or a function.
+			def initialize(inputs, outputs)
 				@inputs = inputs
 				@outputs = outputs
-				
-				# Represents an abstract process, e.g. a name or a function.
-				@process = process
 			end
 			
 			attr :inputs
 			attr :outputs
-			attr :process
 			
 			# Nodes that inherit outputs are special in the sense that outputs are not available until all child nodes have been evaluated.
 			def inherit_outputs?
@@ -78,16 +74,22 @@ module Build
 				return false
 			end
 			
+			def == other
+				self.class == other.class and
+					@inputs == other.inputs and
+					@outputs == other.outputs
+			end
+			
 			def eql?(other)
-				other.kind_of?(self.class) and @inputs.eql?(other.inputs) and @outputs.eql?(other.outputs) and @process.eql?(other.process)
+				self.equal?(other) or self == other
 			end
 			
 			def hash
-				[@inputs, @outputs, @process].hash
+				@inputs.hash ^ @outputs.hash
 			end
 			
 			def inspect
-				"#<#{self.class} #{@inputs.inspect} => #{@outputs.inspect} by #{@process}>"
+				"#<#{self.class} #{@inputs.inspect} => #{@outputs.inspect}>"
 			end
 			
 			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, **options, &block)

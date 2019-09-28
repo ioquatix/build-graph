@@ -24,10 +24,12 @@ require 'build/graph/walker'
 require 'build/graph/task'
 require 'build/files/glob'
 
+require_relative 'process_graph'
+
 RSpec.describe Build::Graph::Task do
 	it "should wait for children" do
-		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE, "a")
-		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE, "b")
+		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE)
+		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit)
 		
 		nodes = Set.new([node_a])
 		
@@ -38,15 +40,15 @@ RSpec.describe Build::Graph::Task do
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do
-				sequence << node.process.upcase
+				sequence << [:entered, node]
 				
-				if node.process == 'a'
+				if node == node_a
 					# This will invoke node_b concurrently, but as it is a child, task.visit won't finish until node_b is done.
 					task.invoke(node_b)
 				end
 			end
 			
-			sequence << node.process
+			sequence << [:exited, node]
 		end
 		
 		walker.update(nodes)
@@ -56,6 +58,12 @@ RSpec.describe Build::Graph::Task do
 		
 		task_b = walker.tasks[node_b]
 		expect(walker.tasks[node_a].children).to be == [task_b]
-		expect(sequence).to be == ['A', 'B', 'b', 'a']
+		
+		expect(sequence).to be == [
+			[:entered, node_a],
+			[:entered, node_b],
+			[:exited, node_b],
+			[:exited, node_a]
+		]
 	end
 end

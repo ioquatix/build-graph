@@ -23,66 +23,58 @@ require 'build/graph/node'
 require 'build/files/glob'
 require 'build/files/system'
 
-module Build::Graph::NodeSpec
+RSpec.describe Build::Graph::Node do
 	include Build::Graph
 	include Build::Files
 	
-	RSpec.describe Build::Graph::Node do
-		it "should be unique" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
-			
-			node_a = Node.new(test_glob, listing_output, "a")
-			node_b = Node.new(listing_output, Paths::NONE, "b")
-			
-			expect(node_a).to be_eql node_a
-			expect(node_a).to_not be_eql node_b
-			
-			node_c = Node.new(test_glob, listing_output, "a")
-			
-			expect(node_a).to be_eql node_c
-		end
+	let(:test_glob) {Build::Files::Glob.new(__dir__, "*.rb")}
+	let(:listing_output) {Build::Files::Paths.directory(__dir__, ["listing.txt"])}
+	
+	it "should be unique" do
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
+		node_b = Build::Graph::Node.new(listing_output, Build::Files::Paths::NONE)
 		
-		it "should be dirty" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
-			
-			node_a = Node.new(test_glob, listing_output, "a")
-			
-			expect(node_a.dirty?).to be true
-		end
+		expect(node_a).to be_eql node_a
+		expect(node_a).to_not be_eql node_b
 		
-		it "should be clean" do
-			test_glob = Glob.new(__dir__, "*.rb")
-			listing_output = Paths.directory(__dir__, ["listing.txt"])
-			
-			listing_output.first.touch
-			
-			node_a = Node.new(test_glob, listing_output, "a")
-			
-			expect(node_a.dirty?).to be false
-			
-			listing_output.first.delete
-		end
+		node_c = Build::Graph::Node.new(test_glob, listing_output)
 		
-		it "should be dirty if input files are missing" do
-			input = Paths.directory(__dir__, ["missing-input.txt"])
-			output = Glob.new(__dir__, "*.rb")
-			
-			node = Node.new(input, output, "a")
-			
-			expect(node.missing?).to be true
-			expect(node.dirty?).to be true
-		end
+		expect(node_a).to be_eql node_c
+	end
+	
+	it "should be dirty" do
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
 		
-		it "should be dirty if output files are missing" do
-			input = Glob.new(__dir__, "*.rb")
-			output = Paths.directory(__dir__, ["missing-output.txt"])
-			
-			node = Node.new(input, output, "a")
-			
-			expect(node.missing?).to be true
-			expect(node.dirty?).to be true
-		end
+		expect(node_a.dirty?).to be true
+	end
+	
+	it "should be clean" do
+		listing_output.first.touch
+		
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
+		
+		expect(node_a.dirty?).to be false
+		
+		listing_output.first.delete
+	end
+	
+	it "should be dirty if input files are missing" do
+		input = Build::Files::Paths.directory(__dir__, ["missing-input.txt"])
+		output = Build::Files::Glob.new(__dir__, "*.rb")
+		
+		node = Build::Graph::Node.new(input, output)
+		
+		expect(node.missing?).to be true
+		expect(node.dirty?).to be true
+	end
+	
+	it "should be dirty if output files are missing" do
+		input = Build::Files::Glob.new(__dir__, "*.rb")
+		output = Build::Files::Paths.directory(__dir__, ["missing-output.txt"])
+		
+		node = Build::Graph::Node.new(input, output)
+		
+		expect(node.missing?).to be true
+		expect(node.dirty?).to be true
 	end
 end

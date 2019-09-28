@@ -28,14 +28,14 @@ RSpec.describe Build::Graph::Walker do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
 		
-		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit, "a")
-		node_b = Build::Graph::Node.new(test_glob, listing_output, "b")
+		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit)
+		node_b = Build::Graph::Node.new(test_glob, listing_output)
 		
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do
-				if node.process == 'a'
+				if node == node_a
 					task.invoke(node_b)
 				end
 			end

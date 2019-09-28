@@ -29,8 +29,8 @@ RSpec.describe Build::Graph::Walker do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
 		
-		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
-		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, listing_output, "b")
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
+		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, listing_output)
 		
 		sequence = []
 		
@@ -39,14 +39,15 @@ RSpec.describe Build::Graph::Walker do
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do
-				if node.process == "a"
+				if node == node_a
 					task.invoke(node_b)
 				end
 				
 				node.outputs.each do |output|
 					output.touch
 				end
-				sequence << node.process
+				
+				sequence << node
 			end
 		end
 		
@@ -58,15 +59,15 @@ RSpec.describe Build::Graph::Walker do
 		
 		expect(walker.tasks.count).to be == 2
 		expect(walker.failed_tasks.count).to be == 0
-		expect(sequence).to be == ['b', 'a']
+		expect(sequence).to be == [node_b, node_a]
 	end
 	
 	it "should be unique" do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
 		
-		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
-		node_b = Build::Graph::Node.new(listing_output, Build::Files::Paths::NONE, "b")
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
+		node_b = Build::Graph::Node.new(listing_output, Build::Files::Paths::NONE)
 		
 		sequence = []
 		
@@ -78,7 +79,8 @@ RSpec.describe Build::Graph::Walker do
 				node.outputs.each do |output|
 					output.touch
 				end
-				sequence << node.process
+				
+				sequence << node
 			end
 		end
 		
@@ -86,7 +88,7 @@ RSpec.describe Build::Graph::Walker do
 		
 		expect(walker.tasks.count).to be == 2
 		expect(walker.failed_tasks.count).to be == 0
-		expect(sequence).to be == ['a', 'b']
+		expect(sequence).to be == [node_a, node_b]
 	end
 	
 	it "should cascade failure" do
@@ -94,15 +96,15 @@ RSpec.describe Build::Graph::Walker do
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
 		summary_output = Build::Files::Paths.directory(__dir__, ["summary.txt"])
 		
-		node_a = Build::Graph::Node.new(test_glob, listing_output, "a")
-		node_b = Build::Graph::Node.new(listing_output, summary_output, "b")
+		node_a = Build::Graph::Node.new(test_glob, listing_output)
+		node_b = Build::Graph::Node.new(listing_output, summary_output)
 		
 		# A walker runs repeatedly, updating tasks which have been marked as dirty.
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
 			task.visit do
-				if node.process == 'a'
+				if node == node_a
 					raise Build::Graph::TransientError.new('Test Failure')
 				end
 			end

@@ -160,7 +160,7 @@ module Build
 			end
 			
 			def enter(task)
-				@logger&.debug(self) {"Walker entering: #{task.node.process}"}
+				@logger&.debug(self) {"Walker entering: #{task.node}"}
 				
 				@tasks[task.node] = task
 				
@@ -182,7 +182,7 @@ module Build
 			end
 			
 			def exit(task)
-				@logger&.debug(self) {"Walker exiting: #{task.node.process}, task #{task.failed? ? 'failed' : 'succeeded'}"}
+				@logger&.debug(self) {"Walker exiting: #{task.node}, task #{task.failed? ? 'failed' : 'succeeded'}"}
 				
 				# Fail outputs if the node failed:
 				if task.failed?
