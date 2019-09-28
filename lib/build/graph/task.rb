@@ -59,6 +59,7 @@ module Build
 			
 			attr :children
 			
+			# The state of the task, one of nil, :complete or :failed.
 			attr :state
 			
 			# The error, if the execution of the node fails.
@@ -71,7 +72,7 @@ module Build
 			# A list of any inputs whose relevant tasks failed:
 			attr :inputs_failed
 			
-			# Derived task should override this function to provide appropriate behaviour.
+			# Derived task can override this function to provide appropriate behaviour.
 			def visit
 				update_inputs_and_outputs
 				
@@ -173,8 +174,8 @@ module Build
 				@node.inspect
 			end
 			
+			# If the node inputs is a glob, this part of the process converts the glob into an actual list of files. If we are not inheriting outputs from children tasks, update our outputs now.
 			def update_inputs_and_outputs
-				# If @node.inputs is a glob, this part of the process converts the glob into an actual list of files.
 				@inputs = Files::State.new(@node.inputs)
 				
 				unless @node.inherit_outputs?
@@ -182,11 +183,12 @@ module Build
 				end
 			end
 			
+			# @return [Build::Files::List] the merged list of all children outputs.
 			def children_outputs
 				@children.collect(&:outputs).inject(Files::Paths::NONE, &:+)
 			end
 			
-			# If the node's outputs were a glob, this checks the filesystem to figure out what files were actually generated. If it inherits the outputs of the child tasks, it 
+			# If the node's outputs were a glob, this checks the filesystem to figure out what files were actually generated. If it inherits the outputs of the child tasks, merge them into our own outputs.
 			def update_outputs
 				if @node.inherit_outputs?
 					@outputs = Files::State.new(self.children_outputs)
