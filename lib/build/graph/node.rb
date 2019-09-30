@@ -75,7 +75,8 @@ module Build
 			end
 			
 			def == other
-				self.class == other.class and
+				self.equal?(other) or
+					self.class == other.class and
 					@inputs == other.inputs and
 					@outputs == other.outputs
 			end
