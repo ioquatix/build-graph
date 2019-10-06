@@ -237,6 +237,10 @@ module Build
 					yield
 				end
 			end
+			
+			def inspect
+				"\#<#{self.class}:0x#{self.object_id.to_s(16)} #{@tasks.count} tasks, #{@failed_tasks.count} failed>"
+			end
 		end
 	end
 end

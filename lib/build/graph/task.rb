@@ -156,7 +156,11 @@ module Build
 				"#<#{self.class} #{node_string} #{state_string}>"
 			end
 			
-		protected
+			def inspect
+				"\#<#{self.class}:0x#{self.object_id.to_s(16)} #{node_string} #{state_string}>"
+			end
+			
+			protected
 			
 			def state_string
 				if @state
