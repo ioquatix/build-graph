@@ -95,11 +95,9 @@ module Build
 						fail!(InputsFailed)
 					end
 					
-					if wait_for_children?
-						update_outputs
-					else
-						fail!(ChildrenFailed)
-					end
+					wait_for_children!
+					
+					update_outputs!
 					
 					@state ||= :complete
 					
@@ -162,6 +160,16 @@ module Build
 			
 			protected
 			
+			def wait_for_children!
+				unless wait_for_children?
+					fail!(ChildrenFailed)
+					
+					return false
+				end
+				
+				return true
+			end
+			
 			def state_string
 				if @state
 					@state.to_s
@@ -191,7 +199,7 @@ module Build
 			end
 			
 			# If the node's outputs were a glob, this checks the filesystem to figure out what files were actually generated. If it inherits the outputs of the child tasks, merge them into our own outputs.
-			def update_outputs
+			def update_outputs!
 				if @node.inherit_outputs?
 					@outputs = Files::State.new(self.children_outputs)
 				else
