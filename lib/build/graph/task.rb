@@ -101,8 +101,6 @@ module Build
 						fail!(ChildrenFailed)
 					end
 					
-					update_outputs
-					
 					@state ||= :complete
 					
 					@walker.exit(self)
