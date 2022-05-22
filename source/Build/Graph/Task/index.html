@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		
+			<title>Build::Graph::Task</title>
+		
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		
+		<link rel="icon" type="image/png" href="../../../../_static/icon.png"/>
+		<link rel="stylesheet" href="../../../../_static/site.css" type="text/css" media="screen"/>
+		
+		<script src="../../../../_components/jquery/jquery.min.js"></script>
+		<script src="../../../../_components/jquery-syntax/jquery.syntax.min.js"></script>
+		<script src="../../../../_components/mermaid/mermaid.min.js"></script>
+		
+		<script src="../../../../_static/links.js"></script>
+		
+		<script type="text/javascript">
+		//<![CDATA[
+			jQuery(function($) {
+				$.syntax();
+			});
+			
+			let isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+			let config = {theme: 'light'};
+			if (isDarkMode) config.theme = 'dark';
+			else config.theme = 'forest';
+			mermaid.initialize(config);
+		//]]>
+		</script>
+	</head>
+
+	<body>
+		<header> › <a class="link" href="../../../../index.html">Project</a> › <a class="link" href="../../../index.html">Source</a></header>
+		
+		<main>
+			
+	<h1>Build::Graph::Task</h1>
+	
+	<p>
+		<code class="language-ruby">class Build::Graph::Task</code>
+	</p>
+	
+		
+	
+	
+	
+	<section>
+	<h2>Definitions</h2>
+	
+	<section id="Build::Graph::Task#state"><h3><code class="language-ruby">attr :state</code></h3><p>The state of the task, one of nil, :complete or :failed.</p>
+</section><section id="Build::Graph::Task#error"><h3><code class="language-ruby">attr :error</code></h3><p>The error, if the execution of the node fails.</p>
+</section><section id="Build::Graph::Task#inputs_failed"><h3><code class="language-ruby">attr :inputs_failed</code></h3><p>A list of any inputs whose relevant tasks failed:</p>
+</section><section id="Build::Graph::Task#visit"><h3><code class="language-ruby">def visit</code></h3><p>Derived task can override this function to provide appropriate behaviour.</p>
+<details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def visit
+	update_inputs_and_outputs
+	
+	# Inforn the walker a new task is being generated for this node:
+	@walker.enter(self)
+	
+	if @fiber
+		raise RuntimeError, &quot;Task is already running!&quot;
+	end
+	
+	@fiber = Fiber.new do
+		# If all inputs were good, we can update the node.
+		if wait_for_inputs?
+			begin
+				yield
+			rescue TransientError =&gt; error
+				fail!(error)
+			end
+		else
+			fail!(InputsFailed)
+		end
+		
+		wait_for_children!
+		
+		update_outputs!
+		
+		@state ||= :complete
+		
+		@walker.exit(self)
+		
+		@fiber = nil
+	end
+	
+	# Schedule the work, hopefully synchronously:
+	@fiber.resume
+	
+	# This allows the child task to be passed back to the parent when it is first invoked.
+	return self
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#invoke"><h3><code class="language-ruby">def invoke(node)</code></h3><details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def invoke(node)
+	child_task = @walker.call(node, self)
+	
+	raise ArgumentError.new(&quot;Invalid child task&quot;) unless child_task
+	
+	@children &lt;&lt; child_task
+	
+	return child_task
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#dirty?"><h3><code class="language-ruby">def dirty?</code></h3><p>Returns true if the outputs of the task are out of date w.r.t. the inputs.
+Currently, does not take into account if the input is a glob and files have been added.</p>
+<details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def dirty?
+	if @outputs
+		@outputs.dirty?(@inputs)
+	else
+		true
+	end
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#update_inputs_and_outputs"><h3><code class="language-ruby">def update_inputs_and_outputs</code></h3><p>If the node inputs is a glob, this part of the process converts the glob into an actual list of files. If we are not inheriting outputs from children tasks, update our outputs now.</p>
+<details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def update_inputs_and_outputs
+	@inputs = Files::State.new(@node.inputs)
+	
+	unless @node.inherit_outputs?
+		@outputs = Files::State.new(@node.outputs)
+	end
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#children_outputs"><h3><code class="language-ruby">def children_outputs</code></h3><details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def children_outputs
+	@children.collect(&amp;:outputs).inject(Files::Paths::NONE, &amp;:+)
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#update_outputs!"><h3><code class="language-ruby">def update_outputs!</code></h3><p>If the node's outputs were a glob, this checks the filesystem to figure out what files were actually generated. If it inherits the outputs of the child tasks, merge them into our own outputs.</p>
+<details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def update_outputs!
+	if @node.inherit_outputs?
+		@outputs = Files::State.new(self.children_outputs)
+	else
+		# After the task has finished, we update the output states:
+		@outputs.update!
+	end
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#fail!"><h3><code class="language-ruby">def fail!(error)</code></h3><p>Fail the task with the given error. Any task which is waiting on this task will also fail (eventually).</p>
+<details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def fail!(error)
+	@walker.logger&amp;.error(self) {error}
+	
+	@error = error
+	@state = :failed
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#wait_for_inputs?"><h3><code class="language-ruby">def wait_for_inputs?</code></h3><details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def wait_for_inputs?
+	# Wait on any inputs, returns whether any inputs failed:
+	if @inputs&amp;.any?
+		unless @walker.wait_on_paths(self, @inputs)
+			return false
+		end
+	end
+	
+	return true
+end</code></pre>
+					</details></section><section id="Build::Graph::Task#wait_for_children?"><h3><code class="language-ruby">def wait_for_children?</code></h3><details>
+						<summary><h4>Implementation</h4></summary>
+						<pre><code class="language-ruby">def wait_for_children?
+	if @children&amp;.any?
+		unless @walker.wait_for_children(self, @children)
+			return false
+		end
+	end
+	
+	return true
+end</code></pre>
+					</details></section>	</section>
+	
+	
+
+				
+			<footer>Documentation generated by <a href="https://github.com/socketry/utopia-project">Utopia::Project</a>.</footer>
+		</main>
+	</body>
+</html>
+
