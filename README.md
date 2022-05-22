@@ -2,23 +2,21 @@
 
 Build::Graph is a framework for build systems, with specific functionality for dealing with file based processes.
 
-[![Build Status](https://secure.travis-ci.org/ioquatix/build-graph.svg)](http://travis-ci.org/ioquatix/build-graph)
-[![Code Climate](https://codeclimate.com/github/ioquatix/build-graph.svg)](https://codeclimate.com/github/ioquatix/build-graph)
-[![Coverage Status](https://coveralls.io/repos/ioquatix/build-graph/badge.svg)](https://coveralls.io/r/ioquatix/build-graph)
+[![Development Status](https://github.com/ioquatix/build-graph/workflows/Development/badge.svg)](https://github.com/ioquatix/build-graph/actions?workflow=Development)
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-	gem 'build-graph'
+    gem 'build-graph'
 
 And then execute:
 
-	$ bundle
+    $ bundle
 
 Or install it yourself as:
 
-	$ gem install build-graph
+    $ gem install build-graph
 
 ## Usage
 
@@ -44,35 +42,35 @@ When a task is marked as dirty, it also marks all it's outputs as being dirty, w
 
 ### Example Graph
 
-	target("Library/UnitTest", [] -> :inherit) do
-		library([UnitTest.cpp] -> UnitTest.a) do
-			compile([UnitTest.cpp] -> UnitTest.o)
-			link([UnitTest.o] -> libUnitTest.a)
-		end
-		
-		copy headers: [UnitTest.hpp]
-		
-		# Outputs become libUnitTest.a and UnitTest.hpp
-	end
-
-	target("Executable/UnitTest", [] -> :inherit) do
-		depends("Library/UnitTest")
-		
-		executable(main.cpp -> UnitTest) do
-			compile(main.cpp -> main.o)
-			link([main.o, libUnitTest.a] -> UnitTest)
-		end
-		
-		# Outputs become UnitTest
-	end
+    target("Library/UnitTest", [] -> :inherit) do
+    	library([UnitTest.cpp] -> UnitTest.a) do
+    		compile([UnitTest.cpp] -> UnitTest.o)
+    		link([UnitTest.o] -> libUnitTest.a)
+    	end
+    	
+    	copy headers: [UnitTest.hpp]
+    	
+    	# Outputs become libUnitTest.a and UnitTest.hpp
+    end
+    
+    target("Executable/UnitTest", [] -> :inherit) do
+    	depends("Library/UnitTest")
+    	
+    	executable(main.cpp -> UnitTest) do
+    		compile(main.cpp -> main.o)
+    		link([main.o, libUnitTest.a] -> UnitTest)
+    	end
+    	
+    	# Outputs become UnitTest
+    end
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+1.  Fork it
+2.  Create your feature branch (`git checkout -b my-new-feature`)
+3.  Commit your changes (`git commit -am 'Add some feature'`)
+4.  Push to the branch (`git push origin my-new-feature`)
+5.  Create new Pull Request
 
 ## License
 

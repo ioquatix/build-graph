@@ -20,6 +20,7 @@
 
 require 'set'
 require 'console'
+require 'build/files/monitor'
 
 require_relative 'task'
 require_relative 'node'
