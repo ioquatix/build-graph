@@ -20,5 +20,7 @@ tmp
 *.o
 *.a
 *.d
-mkmf.log
 .rspec_status
+
+spec/build/graph/listing.txt
+spec/build/graph/program/dictionary-sort
