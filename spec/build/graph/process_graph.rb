@@ -55,14 +55,23 @@ class ProcessTask < Build::Graph::Task
 		@node.dirty?
 	end
 	
-	def run(*arguments)
-		if wet?
-			@walker.logger.debug(self) {Console::Event::Spawn.for(*arguments)}
+	class CommandError < RuntimeError
+		def initialize(command, status)
+			@command = command
+			@status = status
 			
-			status = @group.spawn(*arguments)
+			super "#{command.join(' ')} failed: #{status}!"
+		end
+	end
+	
+	def run(*arguments, **options)
+		if wet?
+			@walker.logger.debug(self) {Console::Event::Spawn.for(*arguments, **options)}
+			
+			status = @group.spawn(*arguments, **options)
 			
 			if status != 0
-				raise CommandError.new(status)
+				raise CommandError.new(arguments, status)
 			end
 		end
 	end
