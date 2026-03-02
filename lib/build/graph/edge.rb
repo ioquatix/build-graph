@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2014-2019, by Samuel Williams.
+# Copyright, 2014-2026, by Samuel Williams.
 
 require "fiber"
 
