@@ -66,7 +66,7 @@ class ProcessTask < Build::Graph::Task
 	
 	def run(*arguments, **options)
 		if wet?
-			@walker.logger.debug(self) {Console::Event::Spawn.for(*arguments, **options)}
+			Console::Event::Spawn.for(*arguments, **options).emit(severity: :debug)
 			
 			status = @group.spawn(*arguments, **options)
 			

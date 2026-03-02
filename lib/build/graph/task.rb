@@ -210,7 +210,7 @@ module Build
 			
 			# Fail the task with the given error. Any task which is waiting on this task will also fail (eventually).
 			def fail!(error)
-				@walker.logger&.error(self) {error}
+				Console.error(self, "Task failed!", exception: error)
 				
 				@error = error
 				@state = :failed
