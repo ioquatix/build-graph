@@ -29,6 +29,7 @@ module Build
 				@inputs.map{|path| path.modified_time}.max
 			end
 			
+			# @returns [Boolean] whether any input or output file is missing from the filesystem.
 			def missing?
 				@outputs.any?{|path| !path.exist?} || @inputs.any?{|path| !path.exist?}
 			end
@@ -59,6 +60,7 @@ module Build
 				return false
 			end
 			
+			# @returns [Boolean] whether this node is equal to another by comparing inputs and outputs.
 			def == other
 				self.equal?(other) or
 					self.class == other.class and
@@ -66,18 +68,25 @@ module Build
 					@outputs == other.outputs
 			end
 			
+			# @returns [Boolean] whether this node is equal to another, for use in Hash and Set.
 			def eql?(other)
 				self.equal?(other) or self == other
 			end
 			
+			# @returns [Integer] a hash value derived from inputs and outputs.
 			def hash
 				@inputs.hash ^ @outputs.hash
 			end
 			
+			# @returns [String] a human-readable representation of the node.
 			def inspect
 				"#<#{self.class} #{@inputs.inspect} => #{@outputs.inspect}>"
 			end
 			
+			# Create a top-level node that inherits its outputs from its children.
+			# @parameter inputs [Build::Files::List] the input files for this node.
+			# @parameter outputs [Symbol] the output strategy, defaults to `:inherit`.
+			# @returns [Node] the constructed top-level node.
 			def self.top(inputs = Files::Paths::NONE, outputs = :inherit, **options, &block)
 				self.new(inputs, outputs, block, **options)
 			end

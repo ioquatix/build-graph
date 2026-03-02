@@ -15,6 +15,9 @@ module Build
 	module Graph
 		# A walker walks over a graph and applies a task to each node.
 		class Walker
+			# Create a walker that instantiates tasks of the given class for each visited node.
+			# @parameter task_class [Class] the task class to instantiate; must accept `(walker, node, *args)`.
+			# @returns [Walker] a new walker bound to the given task class.
 			def self.for(task_class, *args, **options)
 				self.new(**options) do |walker, node, parent_task = nil|
 					task = task_class.new(walker, node, *args)
@@ -25,6 +28,8 @@ module Build
 				end
 			end
 			
+			# Create a walker with a block that is called for each node to create and run a task.
+			# @parameter block [Proc] called with `(walker, node, parent_task)` for each visited node.
 			def initialize(&block)
 				# Node -> Task mapping.
 				@tasks = {}
@@ -59,12 +64,18 @@ module Build
 			
 			attr :monitor
 			
+			# Invoke the walker for each node in the given collection.
+			# @parameter nodes [Enumerable] the nodes to update.
 			def update(nodes)
 				Array(nodes).each do |node|
 					self.call(node)
 				end
 			end
 			
+			# Invoke the walker for a single node, reusing an existing task if the node has already been visited.
+			# @parameter node [Node] the node to update.
+			# @parameter parent_task [Task | nil] the parent task, if any.
+			# @returns [Task] the task associated with the node.
 			def call(node, parent_task = nil)
 				# We try to fetch the task if it has already been invoked, otherwise we create a new task.
 				@tasks.fetch(node) do
@@ -78,10 +89,15 @@ module Build
 				end
 			end
 			
+			# @returns [Boolean] whether any tasks have failed during this walk.
 			def failed?
 				@failed_tasks.size > 0
 			end
 			
+			# Block the current fiber until all tasks generating the given paths have completed.
+			# @parameter task [Task] the task waiting on these paths.
+			# @parameter paths [Build::Files::List] the paths to wait on.
+			# @returns [Boolean] true if all paths are available, false if any failed.
 			def wait_on_paths(task, paths)
 				# If there are no paths, we are done:
 				return true if paths.count == 0
@@ -141,8 +157,9 @@ module Build
 				return edge.wait
 			end
 			
+			# Register a task as active and record its declared output paths.
+			# @parameter task [Task] the task that is beginning execution.
 			def enter(task)
-				Console.debug(self){"Walker entering: #{task.node}"}
 				
 				@tasks[task.node] = task
 				
@@ -163,8 +180,9 @@ module Build
 				end
 			end
 			
+			# Mark a task as finished, resolve its output paths and notify any waiting tasks.
+			# @parameter task [Task] the task that has finished execution.
 			def exit(task)
-				Console.debug(self){"Walker exiting: #{task.node}, task #{task.failed? ? 'failed' : 'succeeded'}"}
 				
 				# Fail outputs if the node failed:
 				if task.failed?
@@ -195,14 +213,16 @@ module Build
 				@monitor.add(task)
 			end
 			
+			# Remove a node and its associated task from the walker, e.g. after it has been invalidated.
+			# @parameter node [Node] the node to remove.
 			def delete(node)
-				Console.debug(self){"Delete #{node}"}
 				
 				if task = @tasks.delete(node)
 					@monitor.delete(task)
 				end
 			end
 			
+			# Remove all failed tasks from the walker so they can be retried on the next update.
 			def clear_failed
 				@failed_tasks.each do |task|
 					self.delete(task.node)
@@ -212,6 +232,7 @@ module Build
 				@failed_outputs = Set.new
 			end
 			
+			# Run an update loop, re-executing the given block whenever the monitor detects filesystem changes.
 			def run(**options)
 				yield
 				
@@ -220,6 +241,7 @@ module Build
 				end
 			end
 			
+			# @returns [String] a human-readable summary of the walker state.
 			def inspect
 				"\#<#{self.class}:0x#{self.object_id.to_s(16)} #{@tasks.count} tasks, #{@failed_tasks.count} failed>"
 			end

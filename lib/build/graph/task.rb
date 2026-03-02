@@ -5,22 +5,31 @@
 
 module Build
 	module Graph
+		# An error that represents a transient build failure which can be retried.
 		class TransientError < StandardError
 		end
 		
+		# Mixed in to errors raised when child tasks have failed.
 		module ChildrenFailed
+			# @returns [String] a human-readable error message.
 			def self.to_s
 				"Children tasks failed!"
 			end
 		end
 		
+		# Mixed in to errors raised when tasks generating inputs have failed.
 		module InputsFailed
+			# @returns [String] a human-readable error message.
 			def self.to_s
 				"Tasks generating inputs failed!"
 			end
 		end
 		
+		# Represents a single unit of work within a build graph walk.
 		class Task
+			# Create a new task associated with the given walker and node.
+			# @parameter walker [Walker] the walker driving the graph traversal.
+			# @parameter node [Node] the node this task is responsible for updating.
 			def initialize(walker, node)
 				@walker = walker
 				
@@ -109,10 +118,12 @@ module Build
 				return child_task
 			end
 			
+			# @returns [Boolean] whether the task has failed.
 			def failed?
 				@state == :failed
 			end
 			
+			# @returns [Boolean] whether the task has completed successfully.
 			def complete?
 				@state == :complete
 			end
@@ -127,18 +138,22 @@ module Build
 				end
 			end
 			
+			# Resets the node in the walker if inputs or outputs have changed since the last run.
 			def changed!
 				@walker.delete(@node) if (@inputs.update! or @outputs.update!)
 			end
 			
+			# @returns [Array(String)] the list of root directories for all input and output paths.
 			def directories
 				(@inputs.roots + @outputs.roots).collect{|path| path.to_s}
 			end
 			
+			# @returns [String] a short human-readable summary of the task.
 			def to_s
 				"#<#{self.class} #{node_string} #{state_string}>"
 			end
 			
+			# @returns [String] a detailed human-readable representation including object identity.
 			def inspect
 				"\#<#{self.class}:0x#{self.object_id.to_s(16)} #{node_string} #{state_string}>"
 			end

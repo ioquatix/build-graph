@@ -9,6 +9,8 @@ module Build
 	module Graph
 		# Represents a set of inputs to a graph node.
 		class Edge
+			# Create a new edge, optionally pre-populated with a number of pending traversals.
+			# @parameter count [Integer] the initial number of pending traversals.
 			def initialize(count = 0)
 				@fiber = Fiber.current
 				
@@ -33,10 +35,12 @@ module Build
 				succeeded?
 			end
 			
+			# @returns [Boolean] whether any traversing task failed.
 			def failed?
 				@failed.size != 0
 			end
 			
+			# @returns [Boolean] whether all traversing tasks succeeded.
 			def succeeded?
 				@failed.size == 0
 			end
