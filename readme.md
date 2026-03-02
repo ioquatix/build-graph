@@ -14,7 +14,7 @@ Please see the [project documentation](https://ioquatix.github.io/build-graph) f
 
 Please see the [project releases](https://ioquatix.github.io/build-graphreleases/index) for all releases.
 
-### Unreleased
+### v2.2.0
 
   - Remove `logger` interface.
 
