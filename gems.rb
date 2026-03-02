@@ -10,19 +10,24 @@ gemspec
 group :maintenance, optional: true do
 	gem "bake-modernize"
 	gem "bake-gem"
+	gem "bake-releases"
 	
-	gem "bake-github-pages"
+	gem "agent-context"
+	
 	gem "utopia-project"
 end
 
 group :test do
-	gem "rspec"
-	gem "decode"
 	gem "covered"
+	gem "sus"
+	gem "decode"
 	
 	gem "rubocop"
 	gem "rubocop-md"
 	gem "rubocop-socketry"
+	
+	gem "bake-test"
+	gem "bake-test-external"
 	
 	gem "process-group", "~> 1.1"
 	gem "build-makefile", "~> 1.0"

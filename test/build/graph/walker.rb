@@ -1,4 +1,3 @@
-#!/usr/bin/env rspec
 # frozen_string_literal: true
 
 # Released under the MIT License.
@@ -8,8 +7,9 @@ require "build/graph/node"
 require "build/graph/walker"
 require "build/graph/task"
 require "build/files/glob"
+require "build/files"
 
-RSpec.describe Build::Graph::Walker do
+describe Build::Graph::Walker do
 	it "can generate the same output from multiple tasks" do
 		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
 		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
@@ -19,7 +19,6 @@ RSpec.describe Build::Graph::Walker do
 		
 		sequence = []
 		
-		# A walker runs repeatedly, updating tasks which have been marked as dirty.
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
@@ -36,7 +35,8 @@ RSpec.describe Build::Graph::Walker do
 			end
 		end
 		
-		edge = double()
+		edge = Object.new
+		def edge.traverse(task) = nil
 		walker.outputs[listing_output.first.to_s] ||= [edge]
 		expect(edge).to receive(:traverse)
 		
@@ -56,7 +56,6 @@ RSpec.describe Build::Graph::Walker do
 		
 		sequence = []
 		
-		# A walker runs repeatedly, updating tasks which have been marked as dirty.
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
@@ -84,7 +83,6 @@ RSpec.describe Build::Graph::Walker do
 		node_a = Build::Graph::Node.new(test_glob, listing_output)
 		node_b = Build::Graph::Node.new(listing_output, summary_output)
 		
-		# A walker runs repeatedly, updating tasks which have been marked as dirty.
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
@@ -99,12 +97,37 @@ RSpec.describe Build::Graph::Walker do
 		
 		expect(walker.tasks.count).to be == 2
 		expect(walker.failed_tasks.count).to be == 2
-		expect(listing_output).to be_intersect walker.failed_outputs
-		expect(summary_output).to be_intersect walker.failed_outputs
+		expect(listing_output.any?{|path| walker.failed_outputs.include?(path.to_s)}).to be == true
+		expect(summary_output.any?{|path| walker.failed_outputs.include?(path.to_s)}).to be == true
 		
 		walker.clear_failed
 		
 		expect(walker.tasks.count).to be == 0
 		expect(walker.failed_tasks.count).to be == 0
+	end
+	
+	it "should inherit children outputs" do
+		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
+		
+		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit)
+		node_b = Build::Graph::Node.new(test_glob, listing_output)
+		
+		walker = Build::Graph::Walker.new do |walker, node|
+			task = Build::Graph::Task.new(walker, node)
+			
+			task.visit do
+				if node == node_a
+					task.invoke(node_b)
+				end
+			end
+		end
+		
+		walker.update([node_a])
+		
+		task_a = walker.tasks[node_a]
+		task_b = walker.tasks[node_b]
+		
+		expect(task_a.outputs.to_a).to be == task_b.outputs.to_a
 	end
 end

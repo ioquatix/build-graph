@@ -1,17 +1,16 @@
-#!/usr/bin/env rspec
 # frozen_string_literal: true
 
 # Released under the MIT License.
 # Copyright, 2014-2019, by Samuel Williams.
 
-require_relative "process_graph"
+require "process_graph"
 
-RSpec.describe Build::Graph do
+describe Build::Graph do
 	let(:group) {Process::Group.new}
 	
 	it "shouldn't update mtime" do
-		test_glob = Build::Files::Glob.new(__dir__, "*.rb")
-		listing_output = Build::Files::Paths.directory(__dir__, ["listing.txt"])
+		test_glob = Build::Files::Glob.new(__dir__, "graph/*.rb")
+		listing_output = Build::Files::Paths.directory(__dir__, ["graph/listing.txt"])
 		
 		FileUtils.rm_f listing_output.to_a
 		
@@ -33,17 +32,13 @@ RSpec.describe Build::Graph do
 			walker.update(top)
 		end
 		
-		# The output file shouldn't have been changed because already exists and the input files haven't changed either:
+		# The output file shouldn't have been changed because it already exists and the input files haven't changed either:
 		second_modified_time = listing_output.first.modified_time
 		
-		# The granularity of mtime on some systems is a bit weird:
-		expect(second_modified_time.to_f).to be_within(0.001).of(first_modified_time.to_f)
+		expect((second_modified_time.to_f - first_modified_time.to_f).abs).to be <= 0.001
 		
 		FileUtils.rm_f listing_output.to_a
 		walker.monitor.update(listing_output.roots)
-		
-		# The granularity of modification times isn't that great, so we use >= below.
-		# sleep 1
 		
 		group.wait do
 			walker.update(top)
@@ -55,13 +50,11 @@ RSpec.describe Build::Graph do
 	end
 	
 	it "should compile program and respond to changes in source code" do
-		program_root = Build::Files::Path.join(__dir__, "program")
+		program_root = Build::Files::Path.join(__dir__, ".program")
 		code_glob = Build::Files::Glob.new(program_root, "*.cpp")
 		program_path = Build::Files::Path.join(program_root, "dictionary-sort")
 		
 		walker = Build::Graph::Walker.for(ProcessTask, group)
-		
-		#FileUtils.touch(code_glob.first)
 		
 		top = ProcessNode.top do
 			process code_glob, program_path do
@@ -99,14 +92,14 @@ RSpec.describe Build::Graph do
 			walker.update(top)
 		end
 		
-		expect(program_path).to be_exist
+		expect(program_path.exist?).to be == true
 		expect(code_glob.first.modified_time).to be <= program_path.modified_time
 	end
 	
 	it "should copy files incrementally" do
-		program_root = Build::Files::Path.join(__dir__, "program")
+		program_root = Build::Files::Path.join(__dir__, ".program")
 		files = Build::Files::Glob.new(program_root, "*.cpp")
-		destination = Build::Files::Path.new(__dir__) + "tmp"
+		destination = Build::Files::Path.new(__dir__) + ".program/tmp"
 		
 		walker = Build::Graph::Walker.for(ProcessTask, group)
 		
@@ -117,7 +110,6 @@ RSpec.describe Build::Graph do
 				destination_path = source_path.rebase(destination)
 				
 				process source_path, destination_path do
-					$stderr.puts "Copying #{inputs.first} -> #{outputs.first}"
 					install inputs.first, outputs.first
 				end
 			end
@@ -148,8 +140,7 @@ RSpec.describe Build::Graph do
 		
 		thread.join
 		
-		expect(destination).to be_exist
-		# This line failed, may still be a race condition:
+		expect(destination.exist?).to be == true
 		expect(destination.glob("*.cpp").count).to be == 2
 		
 		destination.delete

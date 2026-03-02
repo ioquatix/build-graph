@@ -1,4 +1,3 @@
-#!/usr/bin/env rspec
 # frozen_string_literal: true
 
 # Released under the MIT License.
@@ -9,9 +8,7 @@ require "build/graph/walker"
 require "build/graph/task"
 require "build/files/glob"
 
-require_relative "process_graph"
-
-RSpec.describe Build::Graph::Task do
+describe Build::Graph::Task do
 	it "should wait for children" do
 		node_a = Build::Graph::Node.new(Build::Files::Paths::NONE, Build::Files::Paths::NONE)
 		node_b = Build::Graph::Node.new(Build::Files::Paths::NONE, :inherit)
@@ -20,7 +17,6 @@ RSpec.describe Build::Graph::Task do
 		
 		sequence = []
 		
-		# A walker runs repeatedly, updating tasks which have been marked as dirty.
 		walker = Build::Graph::Walker.new do |walker, node|
 			task = Build::Graph::Task.new(walker, node)
 			
@@ -28,7 +24,6 @@ RSpec.describe Build::Graph::Task do
 				sequence << [:entered, node]
 				
 				if node == node_a
-					# This will invoke node_b concurrently, but as it is a child, task.visit won't finish until node_b is done.
 					task.invoke(node_b)
 				end
 			end

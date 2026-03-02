@@ -1,4 +1,3 @@
-#!/usr/bin/env rspec
 # frozen_string_literal: true
 
 # Released under the MIT License.
@@ -8,10 +7,7 @@ require "build/graph/node"
 require "build/files/glob"
 require "build/files/system"
 
-RSpec.describe Build::Graph::Node do
-	include Build::Graph
-	include Build::Files
-	
+describe Build::Graph::Node do
 	let(:test_glob) {Build::Files::Glob.new(__dir__, "*.rb")}
 	let(:listing_output) {Build::Files::Paths.directory(__dir__, ["listing.txt"])}
 	
@@ -19,18 +15,18 @@ RSpec.describe Build::Graph::Node do
 		node_a = Build::Graph::Node.new(test_glob, listing_output)
 		node_b = Build::Graph::Node.new(listing_output, Build::Files::Paths::NONE)
 		
-		expect(node_a).to be_eql node_a
-		expect(node_a).to_not be_eql node_b
+		expect(node_a).to be == node_a
+		expect(node_a).not.to be == node_b
 		
 		node_c = Build::Graph::Node.new(test_glob, listing_output)
 		
-		expect(node_a).to be_eql node_c
+		expect(node_a).to be == node_c
 	end
 	
 	it "should be dirty" do
 		node_a = Build::Graph::Node.new(test_glob, listing_output)
 		
-		expect(node_a.dirty?).to be true
+		expect(node_a.dirty?).to be == true
 	end
 	
 	it "should be clean" do
@@ -38,7 +34,7 @@ RSpec.describe Build::Graph::Node do
 		
 		node_a = Build::Graph::Node.new(test_glob, listing_output)
 		
-		expect(node_a.dirty?).to be false
+		expect(node_a.dirty?).to be == false
 		
 		listing_output.first.delete
 	end
@@ -49,8 +45,8 @@ RSpec.describe Build::Graph::Node do
 		
 		node = Build::Graph::Node.new(input, output)
 		
-		expect(node.missing?).to be true
-		expect(node.dirty?).to be true
+		expect(node.missing?).to be == true
+		expect(node.dirty?).to be == true
 	end
 	
 	it "should be dirty if output files are missing" do
@@ -59,7 +55,7 @@ RSpec.describe Build::Graph::Node do
 		
 		node = Build::Graph::Node.new(input, output)
 		
-		expect(node.missing?).to be true
-		expect(node.dirty?).to be true
+		expect(node.missing?).to be == true
+		expect(node.dirty?).to be == true
 	end
 end
