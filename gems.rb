@@ -1,4 +1,9 @@
-source 'https://rubygems.org'
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2014-2022, by Samuel Williams.
+
+source "https://rubygems.org"
 
 gemspec
 
@@ -11,6 +16,15 @@ group :maintenance, optional: true do
 end
 
 group :test do
-	gem 'rb-fsevent'
-	gem 'rb-inotify'
+	gem "rspec"
+	gem "decode"
+	gem "covered"
+	
+	gem "rubocop"
+	gem "rubocop-md"
+	gem "rubocop-socketry"
+	
+	gem "process-group", "~> 1.1"
+	gem "build-makefile", "~> 1.0"
 end
+

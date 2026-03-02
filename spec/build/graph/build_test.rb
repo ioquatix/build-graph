@@ -1,9 +1,13 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path('../../../lib', __dir__)
+# Released under the MIT License.
+# Copyright, 2015-2019, by Samuel Williams.
 
-require 'graphviz'
-require_relative 'process_graph'
+$LOAD_PATH.unshift File.expand_path("../../../lib", __dir__)
+
+require "graphviz"
+require_relative "process_graph"
 
 include ProcessGraph
 
@@ -14,8 +18,8 @@ program_path = Path.join(program_root, "dictionary-sort")
 group = Process::Group.new
 walker = Walker.for(ProcessTask, group)
 
-top = ProcessNode.top code_glob, title: 'top' do
-	process code_glob, program_path, title: 'build' do
+top = ProcessNode.top code_glob, title: "top" do
+	process code_glob, program_path, title: "build" do
 		object_files = inputs.with(extension: ".o") do |input_path, output_path|
 			depfile_path = input_path + ".d"
 			
@@ -27,7 +31,7 @@ top = ProcessNode.top code_glob, title: 'top' do
 				dependencies = depfile[output_path] || dependencies
 			end
 			
-			process dependencies, output_path, title: 'compile' do
+			process dependencies, output_path, title: "compile" do
 				run("clang++", "-MMD", "-O3",
 					"-o", output_path.shortest_path(input_path.root),
 					"-c", input_path.relative_path, "-std=c++11",
@@ -36,12 +40,12 @@ top = ProcessNode.top code_glob, title: 'top' do
 			end
 		end
 		
-		process object_files, program_path, title: 'link' do
+		process object_files, program_path, title: "link" do
 			run("clang++", "-O3", "-o", program_path, *object_files.to_a, "-lm", "-pthread")
 		end
 	end
 	
-	process program_path, title: 'run' do
+	process program_path, title: "run" do
 		run("./" + program_path.relative_path, chdir: program_path.root)
 	end
 end
@@ -53,7 +57,7 @@ trap(:INT) do
 end
 
 viz = Graphviz::Graph.new
-viz.attributes[:rankdir] = 'LR'
+viz.attributes[:rankdir] = "LR"
 
 walker.run do
 	group.wait do
@@ -80,6 +84,6 @@ walker.run do
 		end
 	end
 	
-	File.write('graph.dot', viz.to_dot)
+	File.write("graph.dot", viz.to_dot)
 	`dot -Tpdf graph.dot > graph.pdf && open graph.pdf`
 end

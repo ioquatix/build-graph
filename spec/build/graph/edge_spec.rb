@@ -1,4 +1,8 @@
 #!/usr/bin/env rspec
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2016, by Samuel Williams.
 
 # Copyright, 2012, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
@@ -20,7 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'process_graph'
+require_relative "process_graph"
 
 RSpec.describe Build::Graph::Edge do
 	let(:failed_task) {double(:failed? => true)}

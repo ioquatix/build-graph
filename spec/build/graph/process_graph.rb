@@ -1,9 +1,13 @@
+# frozen_string_literal: true
 
-require 'process/group'
-require 'build/files'
-require 'build/graph'
+# Released under the MIT License.
+# Copyright, 2015-2026, by Samuel Williams.
 
-require 'console/event/spawn'
+require "process/group"
+require "build/files"
+require "build/graph"
+
+require "console/event/spawn"
 
 class ProcessNode < Build::Graph::Node
 	def initialize(inputs, outputs, block, title: nil)
@@ -66,7 +70,7 @@ class ProcessTask < Build::Graph::Task
 	
 	def run(*arguments, **options)
 		if wet?
-			Console::Event::Spawn.for(*arguments, **options).emit(severity: :debug)
+			Console::Event::Spawn.for(*arguments, **options).emit(self, severity: :debug)
 			
 			status = @group.spawn(*arguments, **options)
 			
