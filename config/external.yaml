@@ -1,0 +1,6 @@
+build:
+  url: https://github.com/ioquatix/build.git
+  command: bundle exec bake test
+teapot:
+  url: https://github.com/kurocha/teapot.git
+  command: bundle exec bake test
