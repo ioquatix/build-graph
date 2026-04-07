@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2015-2026, by Samuel Williams.
+# Copyright, 2026, by Samuel Williams.
 
 module Build
 	module Graph
@@ -24,8 +24,8 @@ module Build
 					next unless task.inputs && task.outputs
 					next if task.outputs.equal?(:inherit)
 					
-					input_ids = task.inputs.to_a.map { |path| sanitize_id(path) }
-					output_ids = task.outputs.to_a.map { |path| sanitize_id(path) }
+					input_ids = task.inputs.to_a.map{|path| sanitize_id(path)}
+					output_ids = task.outputs.to_a.map{|path| sanitize_id(path)}
 					
 					task.inputs.each do |path|
 						lines << "    #{sanitize_id(path)}[#{path.basename}]"
