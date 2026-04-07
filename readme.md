@@ -16,7 +16,7 @@ Please see the [project documentation](https://ioquatix.github.io/build-graph) f
 
 Please see the [project releases](https://ioquatix.github.io/build-graphreleases/index) for all releases.
 
-### Unreleased
+### v2.3.0
 
   - Add `Build::Graph::Visualization` for generating Mermaid diagrams of the build graph.
 
