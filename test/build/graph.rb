@@ -4,8 +4,11 @@
 # Copyright, 2014-2026, by Samuel Williams.
 
 require "process_graph"
+require "build/graph/program_context"
 
 describe Build::Graph do
+	include Build::Graph::ProgramContext
+	
 	let(:group) {Process::Group.new}
 	
 	it "shouldn't update mtime" do
@@ -50,9 +53,8 @@ describe Build::Graph do
 	end
 	
 	it "should compile program and respond to changes in source code" do
-		program_root = Build::Files::Path.join(__dir__, ".program")
 		code_glob = Build::Files::Glob.new(program_root, "*.cpp")
-		program_path = Build::Files::Path.join(program_root, "dictionary-sort")
+		program_path = program_root + "dictionary-sort"
 		
 		walker = Build::Graph::Walker.for(ProcessTask, group)
 		
@@ -97,9 +99,8 @@ describe Build::Graph do
 	end
 	
 	it "should copy files incrementally" do
-		program_root = Build::Files::Path.join(__dir__, ".program")
 		files = Build::Files::Glob.new(program_root, "*.cpp")
-		destination = Build::Files::Path.new(__dir__) + ".program/tmp"
+		destination = program_root + "tmp"
 		
 		walker = Build::Graph::Walker.for(ProcessTask, group)
 		
@@ -142,7 +143,5 @@ describe Build::Graph do
 		
 		expect(destination.exist?).to be == true
 		expect(destination.glob("*.cpp").count).to be == 2
-		
-		destination.delete
 	end
 end

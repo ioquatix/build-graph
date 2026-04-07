@@ -160,7 +160,6 @@ module Build
 			# Register a task as active and record its declared output paths.
 			# @parameter task [Task] the task that is beginning execution.
 			def enter(task)
-				
 				@tasks[task.node] = task
 				
 				# In order to wait on outputs, they must be known before entering the task. This might seem odd, but unless we know outputs are being generated, waiting for them to complete is impossible - unless this was somehow specified ahead of time. The implications of this logic is that all tasks must be sequential in terms of output -> input chaning. This is by design and is not a problem in practice.
@@ -183,7 +182,6 @@ module Build
 			# Mark a task as finished, resolve its output paths and notify any waiting tasks.
 			# @parameter task [Task] the task that has finished execution.
 			def exit(task)
-				
 				# Fail outputs if the node failed:
 				if task.failed?
 					@failed_tasks << task
@@ -216,7 +214,6 @@ module Build
 			# Remove a node and its associated task from the walker, e.g. after it has been invalidated.
 			# @parameter node [Node] the node to remove.
 			def delete(node)
-				
 				if task = @tasks.delete(node)
 					@monitor.delete(task)
 				end

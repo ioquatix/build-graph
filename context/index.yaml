@@ -12,3 +12,7 @@ files:
   title: Getting Started
   description: This guide explains how to use `build-graph` to build a dependency
     graph for file-based build systems.
+- path: visualization.md
+  title: Visualization
+  description: This guide explains how to use <code class="language-ruby">Build::Graph::Visualization</code>
+    to generate Mermaid flowchart diagrams from a build graph.

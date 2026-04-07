@@ -66,6 +66,23 @@ module Build
 			# A list of any inputs whose relevant tasks failed:
 			attr :inputs_failed
 			
+			# Traverse the graph without performing any real work. Unlike {visit}, this does not
+			# wait for inputs to be generated, making it suitable for graph analysis tasks such
+			# as visualization where actual files do not need to exist.
+			def traverse
+				update_inputs_and_outputs
+				
+				@walker.enter(self)
+				
+				update_outputs!
+				
+				@state = :complete
+				
+				@walker.exit(self)
+				
+				return self
+			end
+			
 			# Derived task can override this function to provide appropriate behaviour.
 			def visit
 				update_inputs_and_outputs

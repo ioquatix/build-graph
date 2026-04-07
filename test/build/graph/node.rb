@@ -6,10 +6,13 @@
 require "build/graph/node"
 require "build/files/glob"
 require "build/files/system"
+require "sus/fixtures/temporary_directory_context"
 
 describe Build::Graph::Node do
+	include Sus::Fixtures::TemporaryDirectoryContext
+	
 	let(:test_glob) {Build::Files::Glob.new(__dir__, "*.rb")}
-	let(:listing_output) {Build::Files::Paths.directory(__dir__, ["listing.txt"])}
+	let(:listing_output) {Build::Files::Paths.directory(root, ["listing.txt"])}
 	
 	it "should be unique" do
 		node_a = Build::Graph::Node.new(test_glob, listing_output)

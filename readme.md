@@ -10,9 +10,15 @@ Please see the [project documentation](https://ioquatix.github.io/build-graph) f
 
   - [Getting Started](https://ioquatix.github.io/build-graphguides/getting-started/index) - This guide explains how to use `build-graph` to build a dependency graph for file-based build systems.
 
+  - [Visualization](https://ioquatix.github.io/build-graphguides/visualization/index) - This guide explains how to use <code class="language-ruby">Build::Graph::Visualization</code> to generate Mermaid flowchart diagrams from a build graph.
+
 ## Releases
 
 Please see the [project releases](https://ioquatix.github.io/build-graphreleases/index) for all releases.
+
+### Unreleased
+
+  - Add `Build::Graph::Visualization` for generating Mermaid diagrams of the build graph.
 
 ### v2.2.0
 
