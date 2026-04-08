@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v2.3.1
 
   - Deduplicate visualization nodes.
 
