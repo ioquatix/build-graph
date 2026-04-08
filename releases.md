@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Deduplicate visualization nodes.
+
 ## v2.3.0
 
   - Add `Build::Graph::Visualization` for generating Mermaid diagrams of the build graph.

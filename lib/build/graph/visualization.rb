@@ -19,6 +19,7 @@ module Build
 			# @returns [String] A Mermaid flowchart diagram in text format.
 			def generate(walker)
 				lines = ["flowchart LR"]
+				seen = {}
 				
 				walker.tasks.each do |node, task|
 					next unless task.inputs && task.outputs
@@ -28,11 +29,13 @@ module Build
 					output_ids = task.outputs.to_a.map{|path| sanitize_id(path)}
 					
 					task.inputs.each do |path|
-						lines << "    #{sanitize_id(path)}[#{path.basename}]"
+						id = sanitize_id(path)
+						seen[id] ||= (lines << "    #{id}[#{path.basename}]")
 					end
 					
 					task.outputs.each do |path|
-						lines << "    #{sanitize_id(path)}[#{path.basename}]"
+						id = sanitize_id(path)
+						seen[id] ||= (lines << "    #{id}[#{path.basename}]")
 					end
 					
 					label = node.respond_to?(:title) ? node.title.to_s : nil
